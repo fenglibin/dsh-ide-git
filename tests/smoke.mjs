@@ -2673,3 +2673,22 @@ test('ugit layout config: normalizer is pure and bad localStorage never throws (
   store.delete(io.LAYOUT_KEY)
   assert.deepEqual(io.readLayout(), fallback, 'an absent document falls back to defaults')
 })
+
+test('ugit layout opens a side-by-side diff by default (v0.37.0)', () => {
+  // The wide diff is the visual主角 of the ugit layout. A user with no stored
+  // LINEDIFF_KEY preference must see split view; a stored unified choice wins.
+  const start = client.indexOf('const LINEDIFF_KEY =')
+  const end = client.indexOf('function writeLineDiffPrefs', start)
+  const block = client.slice(start, end)
+  assert.match(block, /\{ split: true, wrap: false \}/)
+  const core = new Function('window', block + '\nreturn { readLineDiffPrefs: readLineDiffPrefs }')
+  const empty = { localStorage: { getItem: () => null } }
+  assert.deepEqual(core(empty).readLineDiffPrefs(), { split: true, wrap: false },
+    'no stored preference seeds split view')
+  const stored = { localStorage: { getItem: () => '{"split":false,"wrap":true}' } }
+  assert.deepEqual(core(stored).readLineDiffPrefs(), { split: false, wrap: true },
+    'a stored unified choice is not overwritten by the new default')
+  const broken = { localStorage: { getItem: () => '{bad' } }
+  assert.deepEqual(core(broken).readLineDiffPrefs(), { split: true, wrap: false },
+    'a corrupt preference falls back to split view')
+})
