@@ -14,6 +14,7 @@
 - **提交框位置**:`commitBoxPlace` 两值(`changesBottom` / `panelBottom`)通过 CSS class 切换同一份有状态提交框,草稿/amend/AI 状态不提升、不复制,`confirm: true` 与提交链路不动。
 - **词典与文档**:21 门词典(ZH/EN/19 门 LOCALES)新增 `layout.*` 键并逐门键集一致;`AGENTS.md` 不变量 7 改写为 ugit 分区模型;中英文 README 效果段文字改为 ugit 形态;`docs/screenshots/` 6 张效果图重拍为 ugit 形态。
 - **兼容性**:保留 `dig-root`/`dig-topbar`/`dig-shell`/`dig-empty`、`dig-body-columns|stack|compact`、`.dig-pane-*`、`[data-pane]`、`dig-root-narrow`、`RAIL_VIEW_IDS`、`splitTabs`/`tabPane`、`fillDiff`/`diffPaneOf` 签名,守住 ssr-check 四 needle、六个真机探针与 smoke 的 CSS/文本契约。宿主半、`config.js`、`RAIL_CONFIG_IDS`、方法表、写队列、撤回一律不动。
+- **验证记录**:`node --check src/client.js` / `tests/smoke.mjs`(77 通过 0 失败,含新增的 `LAYOUT_KEY` 纯函数、双向翻转、split 默认值、接线断言) / `scripts/ssr-check.mjs`(better-sidebar、无 cwd、原生右栏、预览四个座位全 OK) / `npm test`(仅 `tests/api.test.mjs:578 pull defaults to merge` 一条**改动前就存在**的基线失败,经 `git stash` 还原 HEAD 复跑确认与本次无关) 全绿。真机 layout-probe / 六个探针本次**未跑通**:隔离实例 3099 的发布版 CLI 页面停在「重新连接中…」、会话无法开始,`layout-probe.mjs` 的 `enterSession()` 引导序列与其初始态不匹配;Playwright 页面 `PAGEERRORS: []`,无插件侧崩溃。已如实记入完整方案 §6.5 遗留风险,不假装通过。隔离实例按 AGENTS.md 纪律收尾杀掉(3099 空闲、3080 从未触碰)。
 
 ## v0.36.0 — 2026-11-21
 

@@ -123,10 +123,20 @@ try {
   await enterSession()
   await openBottomPanel()
 
-  // 1 — the three-pane workbench: branch tree, commit graph, changes + commit box
+  /* ugit layout: the commit graph / branch tree live behind the top tabs, so
+     shots 2/3/5 switch to 历史 first. The tab labels come from the plugin's
+     own dictionary (layout.tab.*), so use the visible button, not a hard-coded
+     Chinese string that would break on an English host. */
+  const switchTab = async (index) => {
+    const tab = page.locator('.dig-ugit-tab').nth(index)
+    if (await tab.count() > 0) { await tab.click({ timeout: 6000 }); await settle(1500) }
+  }
+
+  // 1 — the ugit three-column workbench: directory tree | changes list + commit box | large split diff
   await shot('1-bottom-workbench.png')
 
-  // 2 — the commit context menu
+  // 2 — the commit context menu (commit graph lives on the 历史 tab)
+  await switchTab(2)
   await page.locator('.dig-commit').nth(2).click({ button: 'right' })
   await settle(1200)
   await shot('2-commit-menu.png')
@@ -134,6 +144,8 @@ try {
   await settle(800)
 
   // 3 — deleting a branch really deletes it; the toast offers an undo
+  //     (branch tree lives on the 工作区 tab in the ugit layout)
+  await switchTab(0)
   const branchRow = page.locator('.dig-tree .dig-row').filter({ hasText: 'feature/search-index' }).first()
   await branchRow.click({ button: 'right' })
   await settle(1200)
@@ -156,7 +168,8 @@ try {
   await page.locator('.dig-dialog .dig-btn-primary').first().click({ timeout: 6000 })
   await settle(1000)
 
-  // 5 — commit details with the per-file diff
+  // 5 — commit details with the per-file diff (commit graph is on 历史)
+  await switchTab(2)
   await page.locator('.dig-commit').nth(1).click({ timeout: 6000 })
   await settle(2500)
   const detailFile = page.locator('.dig-detail-files .dig-row').first()

@@ -13992,10 +13992,21 @@ window.__ModuleLoader__.load({
       const layout = props.layout
       const zones = typeof props.order === 'string' && props.order !== ''
         ? props.order.split(',') : UGIT_ZONE_IDS
+      /* A zone is shown when it is visible AND (it belongs to the active tab's
+         candidate set OR the user explicitly opened it — opening a zone in the
+         settings must append it to any tab, per the design's "显隐优先" rule). */
+      const candidates = props.candidates !== null && props.candidates !== undefined ? props.candidates : []
       const visible = zones.filter((id) => {
         if (UGIT_ZONE_IDS.indexOf(id) < 0) return false
         if (layout.hidden.indexOf(id) >= 0) return false
-        if (props.candidates !== null && props.candidates !== undefined && props.candidates.indexOf(id) < 0) return false
+        const inTab = candidates.indexOf(id) >= 0
+        // Only the spec-invisible zones (branches/history) can be "opened" on
+        // any tab: they start in hidden[], and removing them is the explicit
+        // open action. All other zones obey the tab's candidate set, so
+        // switching tabs cannot silently drag the changes/dirTree columns in.
+        const spec = UGIT_ZONE_SPECS.find((entry) => entry.id === id)
+        const opened = !inTab && spec !== undefined && spec.visible === false && layout.hidden.indexOf(id) < 0
+        if (!inTab && !opened) return false
         return props.nodes[id] !== null && props.nodes[id] !== undefined
       })
       if (visible.length === 0) {

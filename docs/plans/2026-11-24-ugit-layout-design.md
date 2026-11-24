@@ -430,6 +430,7 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 | 目录树点目录只能切「按目录分组」，不能真·过滤文件列表（D4 已表态不做） | 与「目录树即过滤器」的直觉有落差 | 若后续要做，给 `ChangesPanel` 加 `dirFilter` prop 并补 `selection-probe.mjs` 断言；本次不做 |
 | `extraRatios` 的简化 clamp 没有 pane core 那套两级 ceiling | 极端窄容器下附加列可能挤占 `changes`/`diff` | 已限定 min/max 且窄容器自动收起附加列；若真机复现再移植 clamp，不在本次范围 |
 | `AGENTS.md` 不变量 7 改写后，历史 CHANGELOG 条目里「columns/stack/compact」的描述不再对应新代码 | 仅文档表述 | 不回改历史条目（变更记录纪律：历史条目不改），靠不变量 7 的新描述为准 |
+| **真机 layout-probe / 六个探针本次未跑通**：隔离实例 3099 起来后页面停在「重新连接中…/连接中断，正在重试」、右侧栏无 guide entries、会话无法真正开始；`scripts/layout-probe.mjs` 的 `enterSession()` 引导序列与发布版 CLI 的「选择工作区」初始态不匹配 | 有数据的 `UgitBody` chrome（目录树/变更/diff）**未经真机渲染验证**。但 `node --check`、`tests/smoke.mjs`(77/0)、`ssr-check.mjs`(四座位全 OK)、`npm test`(仅既有 `api.test.mjs:578 pull defaults` 基线失败) 全绿，Playwright 页面 `PAGEERRORS: []` | 本次如实记录、不假装通过。后续需：①用完整 profile 正式安装形态（而非手工解包 tarball）起隔离实例；②按 `selection-probe.mjs` 的 `/api/workspace/create` gateway 绑定更新 `layout-probe.mjs` 的 `enterSession()`；③再跑 §7.1 全套探针。隔离实例已按 AGENTS.md 纪律收尾杀掉，3099 空闲、3080 从未触碰 |
 
 ## 7. 测试策略与实施顺序
 
