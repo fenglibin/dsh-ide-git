@@ -1,57 +1,62 @@
-## 1. 配置层（纯函数，先绿）
+# 执行说明（先读）
 
-- [ ] 新增 `UGIT_ZONE_SPECS`（5 列分区）/ `UGIT_AFFIX_SPECS`（3 附属）/ `UGIT_TABS`（3 Tab）/ `LAYOUT_KEY='dsh-ide-git.layout.v2'`，**最终安全落点 `writePanes`(10379) 之后、`/* ---- dock action core`(10384) 之前**（9963–10097 非空档且被 smoke.mjs:1268/:1530 两个切片横跨，见 design/D2 二次确证） (covers: zone-config/归一化与坏数据容错, design/D2)
-- [ ] 实现 `normalizeLayout`（丢弃未知/重复 id、补齐缺失、activeTab 回退、affixes 布尔化、commitBoxPlace 回退、extraRatios 夹取）、`readLayout`/`writeLayout`（try/catch 静默降级、写路径禁止回退 RAIL_KEY） (covers: zone-config/坏数据不白屏, zone-config/新增分区不被旧文档隐藏, design/D2)
-- [ ] 在 `tests/smoke.mjs` 新增 `LAYOUT_KEY` 纯函数切片断言与双向翻转断言 (covers: zone-config/归一化与坏数据容错, diff-focus/21 门键集一致, design/D2, design/D6)
+- **权威清单** = 下方 §1–§8 共 29 条，按编号**自上而下即为执行顺序**；`§9` 已删除（它是旧镜像，重复且造成循环依赖）。
+- 每条格式：`[层]` + 可观察行为 + **验证**（具体命令 / 期望输出）+ **依赖**（前置条目编号）+ `(covers: ...)` 锚点。
+- 锚点严格用 spec delta 里的**确切 `#### Scenario:` 名称**（共 20 个）、`req/<n>`（原始需求第 n 条）、`design/<Dn>`（设计第 n 个决策）。Requirement 名一律不作锚点。
+- **跨层规则**：`UgitBody`/`UgitTopbar`/`UgitLayoutSettings` 只接 `layout` / `onLayoutChange` props，**不得直接调用 `readLayout()`/`writeLayout()`**；唯一读写 localStorage 的地方是 §1 的配置层与 §4.3 的 Panel 接线（第 17 条自检）。验收时用 `grep -n "readLayout()\|writeLayout(" src/client.js` 确认调用点只在 §1 与 Panel。
+- **公共符号**：`ChangesPanel`(13757) 是被 3 处调用的公共组件，其新增 `showComposer` prop 与 `CommitBox` 抽取单列为 §3.1，并写明所有调用方（第 20 条自检）。
+- **扩展点**：`UGIT_ZONE_SPECS`/`UGIT_AFFIX_SPECS`/`UGIT_TABS` 是可插拔的权威表（第 19 条自检），单列为 §1.1，新增分区只改表不改渲染。
+- 所有命令在仓库根 `/Users/fenglibin/data/code/opensource/dsh-ide-git` 执行。`npm test` = `node --test tests/smoke.mjs tests/api.test.mjs tests/graph.test.mjs tests/repos.test.mjs tests/date-format.test.mjs`。真机验证只用隔离 `DSH_HOME` + 3099，绝不碰 3080、不替用户重启（AGENTS.md）。
 
-## 2. 词典与 diff 默认值
+## 1. 配置层 · 持久化层（纯函数，先绿）
 
-- [ ] 21 门词典批量新增约 20 个 `layout.*` 键（ZH 107 / EN 537 / 19 门 LOCALES），`npm test` 验证逐门键集一致 (covers: diff-focus/21 门键集一致, design/D7)
-- [ ] `readLineDiffPrefs`(11379–11388) 默认值改 `{split:true, wrap:false}`，保留签名/键/形状/useState 播种/useEffect，并新增断言钉住默认值 (covers: diff-focus/首次打开即为并排 diff, diff-focus/老用户偏好不被新默认值覆盖, design/D5)
+- [ ] **1.1** `[持久化层/扩展点]` 在 `src/client.js` 的 `writePanes`(10379) 结束之后、`/* ---- dock action core`(10384) 之前插入 `UGIT_ZONE_SPECS`（5 列分区 `dirTree/changes/diff/branches/history`）、`UGIT_AFFIX_SPECS`（`toolbar/iconRail/commitBox`）、`UGIT_TABS`（`changes/workspace/history` 各自候选列集）、`LAYOUT_KEY='dsh-ide-git.layout.v2'`。**验证**：`node --check src/client.js` 退出码 0；`grep -n "const LAYOUT_KEY\|const UGIT_ZONE_SPECS\|const UGIT_AFFIX_SPECS\|const UGIT_TABS" src/client.js` 输出 4 行；`grep -c "dsh-ide-git.layout.v2" src/client.js` ≥ 1；`npm test` 不新增失败。**依赖**：无。(covers: req/5, req/6, req/7, zone-config/新增分区不被旧文档隐藏, design/D2)
+- [ ] **1.2** `[持久化层]` 实现 `normalizeLayout(raw)`：丢弃未知/重复 id、按 `UGIT_ZONE_SPECS` 补齐缺失 id、非法 `activeTab` 回退 `'changes'`、`affixes` 逐项布尔化、非法 `commitBoxPlace` 回退 `'changesBottom'`、`extraRatios` 夹到规格 min/max。**验证**：`node --check src/client.js` 通过；新增 `tests/smoke.mjs` 用例喂 `normalizeLayout(null)` / `normalizeLayout('bad')` / `normalizeLayout({hidden:['nope','changes','changes'],activeTab:'zzz',commitBoxPlace:'zzz'})`，断言分别得到默认全可见、`hidden` 去重后仅 `changes`、`activeTab==='changes'`、`commitBoxPlace==='changesBottom'`；`npm test` 全绿。**依赖**：1.1。(covers: zone-config/坏数据不白屏, zone-config/新增分区不被旧文档隐藏, design/D2)
+- [ ] **1.3** `[持久化层]` 实现 `readLayout()` / `writeLayout(config)`：一律 `try/catch` 静默降级，读写都过 `normalizeLayout`，写路径**不**触碰 `RAIL_KEY`。**验证**：`grep -n "RAIL_KEY" src/client.js` 中新增代码段无命中；新增 smoke 用例断言 `writeLayout(normalizeLayout(null))` 后 `readLayout()` 深等于默认值、`localStorage` 写入坏 JSON 后 `readLayout()` 仍返回默认值不抛错；`npm test` 全绿。**依赖**：1.2。(covers: zone-config/坏数据不白屏, design/D2)
+- [ ] **1.4** `[持久化层/测试]` 新增 smoke 断言：双向翻转（隐藏→写→读→打开→写→读）、`LAYOUT_KEY` 字面量、`PANES_KEY` 六桶数值断言不回归。**验证**：`node --test tests/smoke.mjs` 退出码 0 且输出含新增用例名；`npm test` 全绿。**依赖**：1.3。(covers: zone-config/隐藏后刷新仍隐藏，再打开后刷新仍显示, design/D2, design/D6)
 
-## 3. 新组件
+## 2. 词典与 diff 默认值 · 基础设施层
 
-- [ ] 从 `ChangesPanel`(14090–14160) 抽出共享 `CommitBox`，新增可选 `showComposer` prop（默认 true），提交逻辑与 `confirm:true` 不动 (covers: zone-config/提交框换落点, design/D6)
-- [ ] 新增 `DirTree`：复用 `buildDirForest`/`dirName`/`remoteTreeStripOf`/`TREE_KEY`，点文件走 `onDiff`/`onSelectionChange`、点目录走 `groupBy`/`setGroupBy`，不承诺过滤 (covers: ugit-layout/参考截图的既有能力复用, design/D4)
-- [ ] 新增 `UgitTopbar`（仓库/分支/Tab/ahead-behind chip/动作/齿轮/窗口控制，**不承载时间范围下拉**，溢出进「⋯ 更多」）与 `UgitIconRail` (covers: ugit-layout/顶栏承载仓库/分支/Tab/动作/窗口控制，不承载时间范围筛选, ugit-layout/顶栏时间筛选生效, design/D3)
-- [ ] 新增 `UgitBody`（按 `LAYOUT_KEY` map 列 + Gutter，复用 `fillDiff` 不调 `paneStyle('diff')`，保留兼容类名）与 `UgitLayoutSettings` (covers: ugit-layout/打开面板看到 ugit 三列, ugit-layout/窄容器自动降级但不丢偏好, diff-focus/diff 不被 paneStyle 压半高, design/D1)
-- [ ] 新增 `UgitLayoutSettings` 的逐区双向开关、上移/下移、默认 Tab、commitBoxPlace 下拉、恢复默认布局（装配进齿轮 `RailSettings`） (covers: zone-config/隐藏后刷新仍隐藏，再打开后刷新仍显示, zone-config/全部隐藏时不留 0 宽容器, zone-config/恢复默认布局一次性打开全部默认区, zone-config/上移下移改变列次序并跨刷新保持, design/D6)
+- [ ] **2.1** `[基础设施层/i18n]` 在 21 门词典（`ZH` 107 / `EN` 537 / `LOCALES` 19 门自 973 起，每门前 `/* locale: <tag> */`）批量新增约 20 个 `layout.*` 键，键集逐门一致。**验证**：`grep -c "'layout\." src/client.js` ≥ 20；`npm test` 中 `every shipped dictionary carries the same key set as zh` 用例通过；`node --test tests/date-format.test.mjs` 通过。**依赖**：无（可与 §1 并行，但顺序上排在 1.4 后统一验）。(covers: req/2, req/4, diff-focus/21 门键集一致, design/D7)
+- [ ] **2.2** `[基础设施层/diff 偏好]` 把 `readLineDiffPrefs`(11379–11388) 两处默认值从 `{split:false,wrap:false}` 改为 `{split:true,wrap:false}`，保留函数名、`LINEDIFF_KEY` 字面量、返回形状、`useState(readLineDiffPrefs)`(11552) 与 `useEffect`(11553)。**验证**：`grep -n "split: false\|split: true" src/client.js` 显示默认值两处为 `true`；新增 smoke 断言钉住 `readLineDiffPrefs()` 在无 localStorage 时返回 `{split:true,wrap:false}`；`npm test` 全绿。**依赖**：无。(covers: req/2, diff-focus/首次打开即为并排 diff, diff-focus/老用户偏好不被新默认值覆盖, design/D5)
 
-## 4. 接线
+## 3. 组件层 · 业务逻辑层（每个组件独立成项，只接 props）
 
-- [ ] 替换 `topBar`(17282–17307) 为 `UgitTopbar`；**不做**时间范围下拉、不改 `HistoryList` props/`rows`，历史筛选（单一 `since` 下拉 + 文本/哈希/分支/作者/路径过滤）仍留在历史 Tab 的 `HistoryList.filterBar`(14814) (covers: ugit-layout/顶栏时间筛选生效, design/D3)
-- [ ] 删 17999–18055 三套 body 分支，改为单个 `UgitBody`；`view`/`splitTab` 收敛但不删（保滚动位置）；`renderRail` 动作收进顶栏/iconRail (covers: ugit-layout/打开面板看到 ugit 三列, ugit-layout/切到历史 Tab 查看提交图谱, ugit-layout/在变更 Tab 显式打开分支树, design/D1, design/D3)
-- [ ] `activeTab` 写入 `LAYOUT_KEY.activeTab` 并刷新恢复；冲突消解落地（显隐优先于 Tab 候选、Tab 级 order 优先顶层、hidden 优先 treeOpen） (covers: zone-config/隐藏后刷新仍隐藏，再打开后刷新仍显示, design/D2, design/D3)
-- [ ] tree/changes 列宽继续经 `Gutter` + `PANES_KEY` 记忆为 ratio，一次手势一次落盘；附加列宽走 `extraRatios` (covers: zone-config/拖拽列宽跨刷新保持, design/D2)
+- [ ] **3.1** `[业务逻辑层/公共符号]` 从 `ChangesPanel`(13757) 的 `composer`(14090–14160) 抽出共享 `CommitBox`，给 `ChangesPanel` 新增可选 `showComposer` prop（默认 `true`）；`showComposer===false` 时不渲染内部 composer，其余 props 与 `smoke.mjs:1246–1249` 的 `head` 断言不变。**调用方同步**：`ChangesPanel` 的 3 处调用（17683–17712 及 compact/columns 分支）全部显式传 `showComposer`（默认路径传 `true`），提交逻辑与 `confirm: true` 字符串一字不动。**验证**：`grep -c "showComposer" src/client.js` ≥ 4；`grep -n "confirm: true" src/client.js` 条数与改前一致；`node --check src/client.js` 通过；`npm test` 全绿。**依赖**：无。(covers: req/6, zone-config/提交框换落点, design/D6)
+- [ ] **3.2** `[业务逻辑层]` 新增 `DirTree`：复用 `buildDirForest`(10508)/`dirName`(10493)/`remoteTreeStripOf`(9241)/`TREE_KEY` 折叠(9701)，树内搜索框只过滤树节点；点文件调 `onDiff`(13862)/`onSelectionChange`(17705)，点目录调 `onGroupBy`→`setGroupBy`(15684)，**不**新增 `ChangesPanel` 的 `pathFilter`。**验证**：`grep -n "function DirTree" src/client.js` 命中；`grep -n "props\.(pathFilter\|dirFilter)" src/client.js` 在 `DirTree` 段零命中；`node --check src/client.js` 通过。**依赖**：无。(covers: req/4, ugit-layout/参考截图的既有能力复用, design/D4)
+- [ ] **3.3** `[业务逻辑层]` 新增 `UgitTopbar`：含 `RepoSelect`(13258)、分支下拉(17278)、`dig-track`(17297)、`工作区|变更|历史` Tab、动作图标、齿轮、窗口控制；**不含任何时间范围下拉**，溢出收进「⋯ 更多」；只接 `layout`/`onLayoutChange` props。**验证**：`grep -n "function UgitTopbar" src/client.js` 命中；`grep -n "2月前\|4天前\|until" src/client.js` 零命中；`node --check src/client.js` 通过。**依赖**：3.1（Tab 文案复用词典键由 2.1 提供）。(covers: req/1, req/3, req/4, ugit-layout/顶栏时间筛选生效, design/D3)
+- [ ] **3.4** `[业务逻辑层]` 新增 `UgitIconRail`：竖排动作图标 + 底部 `.dig-rail-settings` 齿轮，复用 `RAIL_SPECS` 与 `dig-rail-btn` 样式(18538–18543)。**验证**：`grep -n "function UgitIconRail" src/client.js` 命中；`node --check src/client.js` 通过。**依赖**：3.3。(covers: req/1, req/4, ugit-layout/参考截图的既有能力复用, design/D1, design/D3)
+- [ ] **3.5** `[业务逻辑层]` 新增 `UgitBody`：按 `layout` prop 的候选列→剔除 `hidden`→按 `order` 排序 map 渲染列 + `Gutter`；`diff` 列直接放 `fillDiff`(17960，**不调** `paneStyle('diff')`)，外层 `.dig-pane-main{flex:1}`；保留 `dig-body-columns|stack|compact`、`.dig-pane-*`、`[data-pane]`、`dig-root-narrow` 兼容类名；**不直接读 localStorage**。**验证**：`grep -n "function UgitBody" src/client.js` 命中；`grep -n "paneStyle('diff')" src/client.js` 在 `UgitBody` 段零命中；`grep -n "readLayout()\|writeLayout(" src/client.js` 在 `UgitBody` 段零命中；`node --check src/client.js` 通过。**依赖**：1.4、3.2、3.3、3.4。(covers: req/2, req/4, ugit-layout/打开面板看到 ugit 三列, ugit-layout/窄容器自动降级但不丢偏好, diff-focus/diff 不被 paneStyle 压半高, design/D1)
+- [ ] **3.6** `[业务逻辑层/扩展点]` 新增 `UgitLayoutSettings` 组件本体（纯 UI，只接 `layout`/`onLayoutChange` props）：逐区双向 checkbox、上移/下移按钮、默认 Tab 下拉、`commitBoxPlace` 两值下拉、「恢复默认布局」按钮。**验证**：`grep -n "function UgitLayoutSettings" src/client.js` 命中；`grep -n "readLayout()\|writeLayout(" src/client.js` 在其段内零命中；`node --check src/client.js` 通过。**依赖**：1.4。(covers: req/5, req/6, zone-config/隐藏后刷新仍隐藏，再打开后刷新仍显示, zone-config/全部隐藏时不留 0 宽容器, zone-config/恢复默认布局一次性打开全部默认区, zone-config/上移下移改变列次序并跨刷新保持, design/D6)
 
-## 5. CSS
+## 4. Panel 接线 · 业务逻辑层（唯一读写 localStorage 的上层）
 
-- [ ] `CSS`(18498–19208) 新增 ugit 单行顶栏、三列主体、`.dig-pane-main{flex:1}` 大 diff、提交框两处落点；保留 11 个 border-l2 选择器与全部兼容类名 (covers: ugit-layout/打开面板看到 ugit 三列, diff-focus/兼容类名与既有验证契约不回归, design/D1, design/D7)
+- [ ] **4.1** `[业务逻辑层]` 替换 `topBar`(17282–17307) 为 `UgitTopbar`；**不做**时间范围下拉、`HistoryList` props/`rows` 一字不改，历史筛选仍留 `HistoryList.filterBar`(14814)。**验证**：`grep -n "const topBar" src/client.js` 不再命中旧双搜索框结构；`grep -n "UgitTopbar" src/client.js` ≥ 2 处；`node --check src/client.js` 通过。**依赖**：3.3。(covers: req/1, req/3, ugit-layout/顶栏时间筛选生效, design/D3)
+- [ ] **4.2** `[业务逻辑层]` 删 17999–18055 三套 body 分支，改为单个 `UgitBody`；保留 `dig-shell`(18457)、`dig-root`、`dig-topbar`、`dig-empty` 四个 ssr needle。**验证**：`grep -c "dig-body-compact\|dig-body-stack\|dig-body-columns" src/client.js` 与改前一致（兼容类名仍在）；`node scripts/ssr-check.mjs` 退出码 0 且输出含 4 个 needle；`node --check src/client.js` 通过。**依赖**：3.5。(covers: req/1, req/2, req/3, req/4, ugit-layout/打开面板看到 ugit 三列, ugit-layout/切到历史 Tab 查看提交图谱, ugit-layout/在变更 Tab 显式打开分支树, diff-focus/SSR 自检与布局探针通过, design/D1, design/D3)
+- [ ] **4.3** `[业务逻辑层/持久化接线]` 在 `Panel` 内 `useState(readLayout)` 播种 `layout`，`onLayoutChange=(next)=>{ setLayout(next); writeLayout(next) }`，把 `layout`/`onLayoutChange` 传给 `UgitBody`/`UgitTopbar`/`UgitLayoutSettings`；`activeTab` 变化时写 `LAYOUT_KEY.activeTab` 并刷新恢复；冲突消解按「显隐 > Tab 候选 > 顶层 order > treeOpen」实现。**验证**：`grep -n "readLayout()\|writeLayout(" src/client.js` 调用点仅在 §1 配置层与 `Panel`；刷新后 `localStorage.getItem('dsh-ide-git.layout.v2')` 的 `activeTab` 与页面选中 Tab 一致；`npm test` 全绿。**依赖**：1.3、3.5、3.6、4.2。(covers: req/5, req/6, req/7, zone-config/隐藏后刷新仍隐藏，再打开后刷新仍显示, zone-config/上移下移改变列次序并跨刷新保持, design/D2, design/D3)
+- [ ] **4.4** `[业务逻辑层]` 收敛 `view`(15184)/`splitTab`(15213)/`renderRail`(17896)：`view==='detail'` 归历史 Tab、`view==='worktrees'` 归工作区 Tab、`splitTab` 仅窄容器决定 history/diff 可见且不删（`tabPane` 保滚动位置）、`renderRail` 动作收进顶栏/iconRail 且 `RAIL_VIEW_IDS`(9886) 不动。**验证**：`grep -n "const RAIL_VIEW_IDS" src/client.js` 命中且内容不变；`grep -c "tabPane" src/client.js` ≥ 改前；`npm test` 中 918–940 与 2351–2355 断言通过。**依赖**：4.2。(covers: req/3, ugit-layout/切到历史 Tab 查看提交图谱, design/D1, design/D3)
+- [ ] **4.5** `[持久化层/接线]` tree/changes 列宽继续经 `Gutter`(12952) + `PANES_KEY` 记忆为 ratio 且一次手势一次 `writePanes`；`branches`/`history` 附加列宽走 `LAYOUT_KEY.extraRatios` 并复用 `Gutter` 的简化 clamp。**验证**：`node scripts/panes-probe.mjs "<url>" [out]` 中「拖拽生效 / reload 保持 / wide-tall 不串桶」三项通过；`grep -c "writePanes(" src/client.js` 与改前一致。**依赖**：4.3、3.5。(covers: req/6, zone-config/拖拽列宽跨刷新保持, design/D2)
 
-## 6. 设置面
+## 5. 样式层 · 基础设施层
 
-- [ ] 齿轮 `RailSettings`(12653) 装配布局开关（`layoutToggle`/`layoutSelect`，不用 `textRow`/`selectRow`/`const field`）；插件页 `RailSettingsCard`(12075) 只加只读说明 + 「打开布局设置」入口按钮，不加 checkbox (covers: zone-config/隐藏后刷新仍隐藏，再打开后刷新仍显示, diff-focus/兼容类名与既有验证契约不回归, design/D6)
+- [ ] **5.1** `[基础设施层/CSS]` 在 `CSS`(18498–19208) 新增 ugit 单行顶栏、三列主体、`.dig-pane-main{flex:1}` 大 diff、提交框 `changesBottom`/`panelBottom` 两处落点；保留 11 个 `border-l2` 选择器与全部兼容类名。**验证**：`npm test` 中 `block separators paint on border-l2` 用例通过；`grep -c "border-l2" src/client.js` ≥ 改前；`node --check src/client.js` 通过。**依赖**：4.2。(covers: req/2, req/4, ugit-layout/打开面板看到 ugit 三列, design/D1, design/D7)
 
-## 7. 测试与探针
+## 6. 设置面 · 业务逻辑层（消除与 §3.6 的循环依赖：此处只做挂载）
 
-- [ ] 按 D1 完整清单诚实更新 `tests/smoke.mjs` 文本断言（918–940 / 2351–2372 / 1704–1708 / 1849–1860 等），不留死字符串 (covers: diff-focus/兼容类名与既有验证契约不回归, design/D1)
-- [ ] `scripts/screenshots.mjs` 第 2/3/5 张改「先切 Tab」路径、第 126 行注释改 ugit 三列；`settings-card-probe.mjs` 零改动 (covers: ugit-layout/参考截图的既有能力复用, design/D3, design/D6, design/D7)
-- [ ] 按顺序跑 `npm test` → ssr-check → layout-probe → panes-probe → dock-probe → selection-probe → settings-card-probe → conversation-probe → screenshots；隔离 `DSH_HOME`+3099，绝不碰 3080、不替用户重启 (covers: diff-focus/SSR 自检与布局探针通过, diff-focus/全套验证通过, design/D7)
+- [ ] **6.1** `[业务逻辑层/装配]` 在齿轮 `RailSettings`(12653) 的 items 装配处挂载 `UgitLayoutSettings`（用 `layoutToggle`/`layoutSelect`，**不用** `textRow`/`selectRow`/`const field`）；插件页 `RailSettingsCard`(12075) **只加**只读说明 + 「打开布局设置」入口按钮，**不加 checkbox**。**验证**：`npm test` 中 1659–1666 的 `cardFields` 集合不变；`npm run probe:settings-card` 的 16 连点断言通过；`grep -c "input\[type=checkbox\]" src/client.js` 在 `RailSettingsCard` 段不增加。**依赖**：3.6、4.3。(covers: req/5, req/6, req/7, zone-config/隐藏后刷新仍隐藏，再打开后刷新仍显示, zone-config/恢复默认布局一次性打开全部默认区, design/D6)
 
-## 8. 收尾
+## 7. 验证层 · 测试与探针（每条命令独立成项）
 
-- [ ] `CHANGELOG.md` 补 `## Unreleased`；`AGENTS.md` 不变量 7 改写为 ugit 分区模型；两份 README 效果段文字改 ugit 形态 (covers: diff-focus/词典与文档同步, design/D7)
-- [ ] 重拍 `docs/screenshots/` 6 张为 ugit 形态（图名/数量/`screenshots.json` 不变） (covers: ugit-layout/打开面板看到 ugit 三列, diff-focus/词典与文档同步, design/D7)
-- [ ] 记录 `record_change` 并推进交付任务到 implemented / verified / accepted (covers: diff-focus/全套验证通过, design/D1, design/D2, design/D3, design/D4, design/D5, design/D6, design/D7)
+- [ ] **7.1** `[测试层]` 按 D1 完整清单诚实更新 `tests/smoke.mjs` 文本断言（918–940 / 2351–2372 / 1704–1708 / 1849–1860 等），改成针对 `UgitBody` 的等价断言，不留死字符串。**验证**：`node --test tests/smoke.mjs` 退出码 0；`grep -n "dig-body-stack.*splitTabs\|historyPane, diffGutter, diffPane" tests/smoke.mjs` 不再出现旧断言。**依赖**：4.2、4.4、5.1。(covers: req/1, diff-focus/SSR 自检与布局探针通过, design/D1)
+- [ ] **7.2** `[测试层]` `scripts/screenshots.mjs` 第 2/3/5 张改「先切 Tab」路径、第 126 行注释改 ugit 三列；`scripts/settings-card-probe.mjs` **零改动**。**验证**：`git diff --stat scripts/settings-card-probe.mjs` 输出为空；`node --check scripts/screenshots.mjs` 退出码 0。**依赖**：4.1、4.2。(covers: req/4, req/8, ugit-layout/参考截图的既有能力复用, design/D3, design/D6, design/D7)
+- [ ] **7.3** `[测试层]` 跑 `npm test` 全量（5 个测试文件）。**验证**：退出码 0，输出 `pass` 数 ≥ 改前、无 `fail`。**依赖**：7.1。(covers: req/1, req/2, req/3, req/4, req/5, req/6, req/7, req/8, diff-focus/21 门键集一致, diff-focus/全套验证通过, design/D7)
+- [ ] **7.4** `[测试层]` 跑 `node scripts/ssr-check.mjs` 与 `node scripts/layout-probe.mjs "<url>" [out]`（隔离实例 3099）。**验证**：ssr-check 退出码 0 且含 4 needle；layout-probe 11 档宽度无 `FAILED`、零 pageerror。**依赖**：7.3、4.2。(covers: req/1, diff-focus/SSR 自检与布局探针通过, design/D1, design/D7)
+- [ ] **7.5** `[测试层]` 依次跑 `panes-probe` / `dock-probe native|degraded` / `selection-probe` / `settings-card-probe` / `conversation-probe`（隔离实例 3099，验证完杀掉）。**验证**：5 个脚本退出码均为 0，各自 `check` 全通过、零 pageerror；`lsof -tiTCP:3099 -sTCP:LISTEN` 输出为空。**依赖**：7.4、6.1、4.5。(covers: req/2, req/3, req/5, req/6, req/7, zone-config/拖拽列宽跨刷新保持, diff-focus/全套验证通过, design/D7)
 
-## 9. 进度索引（与阶段清单镜像，非独立任务）
+## 8. 收尾 · 文档层（每个文件独立成项）
 
-- [x] 补齐 OpenSpec 变更（proposal/design/tasks/spec）并推进到 specified (covers: req/1, req/2, req/3, req/4, req/5, req/6, req/7, req/8, design/D1, design/D2, design/D3, design/D4, design/D5, design/D6, design/D7)
-- [ ] 阶段1 配置层 = §1 (covers: req/5, req/6, req/7, design/D2)
-- [ ] 阶段2 词典 = §2 (covers: req/2, req/4, design/D5, design/D7)
-- [ ] 阶段3 新组件 = §3 (covers: req/2, req/3, req/4, design/D3, design/D4, design/D6)
-- [ ] 阶段4 接线 = §4（**不含 time 筛选落顶栏**，见 §4 第 1 条与 D3 能力缺口） (covers: req/1, req/2, req/3, req/4, design/D1, design/D3)
-- [ ] 阶段5 CSS = §5 (covers: req/2, req/4, design/D1, design/D7)
-- [ ] 阶段6 设置面 = §6 (covers: req/5, req/6, req/7, design/D6)
-- [ ] 阶段7 测试探针 = §7 (covers: req/1, req/2, req/3, req/4, req/5, req/6, req/7, req/8, design/D1, design/D7)
-- [ ] 阶段8 收尾 = §8 (covers: req/4, req/8, design/D7)
+- [ ] **8.1** `[文档层]` `CHANGELOG.md` 顶部补 `## Unreleased` + feat 条目（ugit 布局、分区配置、split 默认值变更）。**验证**：`head -20 CHANGELOG.md` 含 `## Unreleased`；`npm test` 中 CHANGELOG 表头用例通过。**依赖**：7.3。(covers: req/4, diff-focus/21 门键集一致, design/D7)
+- [ ] **8.2** `[文档层]` `AGENTS.md` 不变量 7 改写为 ugit 分区模型 + 宽度仍决定窄容器降级；目录地图补 `docs/plans/` 与 `openspec/`。**验证**：`grep -n "ugit\|分区模型" AGENTS.md` 命中；`grep -n "openspec" AGENTS.md` 命中。**依赖**：无（文档可先行，但排在验证后统一提交）。(covers: req/1, req/4, diff-focus/SSR 自检与布局探针通过, design/D7)
+- [ ] **8.3** `[文档层]` `README.md` / `README_EN.md` 的「效果 / Screenshots」两列表格文字改为 ugit 形态，图名/数量不变；`screenshots.json` 不动。**验证**：`git diff --stat screenshots.json` 输出为空；两份 README 含「变更 / diff / 目录树」描述且图名引用与改前一致。**依赖**：7.2。(covers: req/4, req/8, ugit-layout/参考截图的既有能力复用, design/D7)
+- [ ] **8.4** `[文档层]` 用 `node scripts/screenshots.mjs <web-url> [out]` 重拍 `docs/screenshots/` 6 张为 ugit 形态（隔离实例 3099）。**验证**：`git diff --stat docs/screenshots/` 显示 6 个 png 变更；`ls docs/screenshots/*.png | wc -l` = 6；文件名与改前一致。**依赖**：7.5、8.3。(covers: req/4, req/8, ugit-layout/打开面板看到 ugit 三列, diff-focus/全套验证通过, design/D7)
+- [ ] **8.5** `[交付层]` 调 `record_change` 记录本次改动，并按 `advance_delivery_task` 顺序推进到 `implemented` → `verified` → `accepted`。**验证**：`get_delivery_task` 返回 `phase: "accepted"`、`changeCount ≥ 1`；`npm test` 退出码 0。**依赖**：8.1、8.2、8.3、8.4、7.3、7.4、7.5。(covers: req/1, req/2, req/3, req/4, req/5, req/6, req/7, req/8, diff-focus/全套验证通过, design/D1, design/D2, design/D3, design/D4, design/D5, design/D6, design/D7)
