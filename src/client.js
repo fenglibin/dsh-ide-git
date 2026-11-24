@@ -18919,7 +18919,13 @@ window.__ModuleLoader__.load({
               onDir: () => setGroupBy('dir'),
             })),
           changes: E('div', { className: 'dig-pane dig-pane-changes', 'data-pane': 'changes', style: paneStyle('changes') }, changesPane),
-          diff: E('div', { className: 'dig-pane dig-pane-main' }, historyPane, diffGutter, diffPane),
+          /* ugit 的主角列：直接用 fillDiff（style 为 null、dig-diff-pane-fill
+             撑满），绝不套 diffPaneOf(false) 的 paneStyle('diff') —— 后者是
+             55% 高度上限，会把大号 diff 压成半高（设计 D1）。historyPane 归
+             history 区/Tab，不塞进变更 Tab 的 diff 列。 */
+          diff: fillDiff === null
+            ? E('div', { className: 'dig-pane dig-pane-main' }, E('div', { className: 'dig-empty' }, t('diff.empty')))
+            : E('div', { className: 'dig-pane dig-pane-main' }, fillDiff),
           branches: E('div', { className: 'dig-pane dig-pane-tree', 'data-pane': 'tree', style: paneStyle('tree') },
             E(BranchTree, { t: t, branches: branches, favorites: favorites, onCheckout: checkout, onBrowse: browseBranch, onBranchMenu: branchMenu, onDeleteEntries: deleteBranchEntries, onCopyValues: copyValues, onPicksChange: onBranchPicks, clearSignal: pickEpochs.tree })),
           history: E('div', { className: 'dig-pane dig-pane-main' }, historyPane),

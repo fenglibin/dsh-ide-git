@@ -2367,8 +2367,14 @@ test('clicking a changed file shows its diff in every chrome (v0.25.1)', () => {
     'the stacked chrome hands its divider to the changes list as well')
   assert.match(client, /dig-body-stack[\s\S]{0,1400}splitTabs\(false, false\)/,
     'the stacked chrome renders the shared tab strip above the history window')
-  assert.equal((client.match(/className: 'dig-pane dig-pane-main' \}, historyPane, diffGutter, diffPane/g) || []).length, 1,
-    'only the three-column chrome still splits the diff out under the history')
+  /* v0.37.0: the wide chrome is now the ugit three-column layout. Its diff
+     column uses fillDiff (no stored height), so the old "split the diff out
+     under the history" line is gone. diffPane (diffPaneOf(false)) is still used
+     only by the narrow compact/stack degradation branches. */
+  assert.match(client, /const fillDiff = diffPaneOf\(true\)/,
+    'the wide ugit diff column uses the fill variant')
+  assert.match(client, /diff: fillDiff === null/,
+    'UgitBody wires the fill variant as its diff column')
   assert.match(client, /const diffPaneOf = \(fill\) => [^\n]*style: fill === true \? null : paneStyle\('diff'\)/,
     'the split pane still consumes the stored size')
   assert.match(client, /setSelectedPath\(seed\.path === undefined \? null : seed\.path\)/,
