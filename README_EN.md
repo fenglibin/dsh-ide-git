@@ -4,9 +4,9 @@
 
 [简体中文](README.md) | English
 
-> An **IDE-grade Git tool window** for the [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) sidebar — branch tree on the left, commit graph in the middle, changes and commit details on the right, with JetBrains-style actions. Registered as a native [dsh-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) tab, usable in both the native right sidebar and the bottom workbench; since v0.13.0 also as a **conversation-area tab** (a Git tab beside Chat/Trajectory, switchable off in settings).
+> A **ugit-style Git tool window** for the [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) sidebar — a single-row toolbar, a directory tree, the changed-files list and a **large side-by-side split diff** as the visual protagonist; the branch tree and commit graph stay behind tabs/settings. Registered as a native [dsh-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) tab, usable in both the native right sidebar and the bottom workbench; since v0.13.0 also as a **conversation-area tab** (a Git tab beside Chat/Trajectory, switchable off in settings).
 
-DSH's built-in Git panel covers stage / commit / revert / history. `dsh-ide-git` adds the layer IDE users expect: a **branch tree with a full context menu**, a **commit graph**, **commit details with per-file diffs**, a **grouped changes list** and a commit box.
+DSH's built-in Git panel covers stage / commit / revert / history. `dsh-ide-git` adds the layer IDE users expect: a **directory tree**, a **branch tree with a full context menu**, a **commit graph**, **commit details with per-file diffs**, a **changes list with status icons** and a commit box — with every zone showable/hideable and its position remembered in the browser.
 
 ## Screenshots
 
@@ -75,16 +75,16 @@ The same panel shows up on surfaces of very different shapes, so the layout meas
 
 | Surface | Shape | Layout here |
 |---|---|---|
-| Right sidebar (native, or bridged by better-sidebar) | narrow + tall | `stack`: changes on top, history and diff as two tabs below (a click on a file switches to `Diff`), collapsible branch pane |
-| Bottom workbench (better-sidebar only) | wide + flat | `columns`: tree / graph / changes — the JetBrains Git tool window shape |
-| Sidebar dragged very narrow (< 400px) | narrow | `compact`: changes on top, history and diff as two tabs below, collapsible tree |
+| Bottom workbench (better-sidebar only) | wide + flat | `dig-body-columns`: the three ugit columns side by side — directory tree (narrow) / changed-files list / **large split diff** (`flex:1`, ~59% of the width) |
+| Right sidebar (native, or bridged by better-sidebar) | narrow + tall | `dig-body-stack`: the same ugit zones stacked vertically; directory tree / changes / diff remain the protagonists, branch tree and commit graph do not appear |
+| Sidebar dragged very narrow (< 400px) | narrow | `dig-body-compact`: the same ugit zones, more compact |
 
-The panel never guesses: it measures itself with a `ResizeObserver` (width ≥ 600px and width ≥ 1.15 × height → columns, width < 400px → the compact tabs, otherwise stack — width decides, height has no veto); both stacked layouts make history and diff tabs, and a click on a changed file flips to `Diff`. Free-floating windows and the mobile drawer adapt too.
+The panel never guesses: it measures itself with a `ResizeObserver` (width ≥ 600px and width ≥ 1.15 × height → horizontal columns, width < 400px → compact, otherwise stacked — width decides, height has no veto). **All three chromes render the same `UgitBody`**; `chrome` only picks the CSS direction. Zone visibility / order / default tab / commit-box placement / extra column widths are remembered in the browser (`dsh-ide-git.layout.v2`) and restored on reload. Free-floating windows and the mobile drawer adapt too.
 
 ## Features
 
 - Action rail: the JetBrains-style vertical strip in the bottom workbench (and one horizontal row under the header in the right sidebar) with refresh, new branch, checkout, delete, compare, show diff, stash, new tag, favorite, fetch, pull and push. **It shows as many buttons as fit**, folds the rest into a `⋯ more` menu, and pins a `⚙ settings` button that lets you reorder actions and toggle each of them (stored as one boolean per action plus `railOrder` in the plugin's row Config; an empty order means the code order). Every action lights up or greys out with the current state (no other branch → delete / checkout / compare off, no remote → fetch / push off, no upstream → pull off, no changes → diff off).
-- Tabs in the stacked layouts: below 600px (both `stack` and `compact`) the changes list keeps the top of the panel and the lower window is a `History` / `Diff` tab pair — opening a changed file switches to `Diff`, so the history list (and its scroll position) is never pushed away; the divider above that window drags and double-click resets (same store as the other panes, `dsh-ide-git.panes.v1`).
+- Zone sizes & visibility: the divider between the directory tree and the changes column drags and double-click resets, with widths stored as ratios in `dsh-ide-git.panes.v1` (bucketed by `columns:wide/tall`). In `⚙` every zone can be shown/hidden (5 columns + toolbar / icon rail / commit box), columns reordered, and the default tab and commit-box placement chosen — all in `dsh-ide-git.layout.v2`.
 - Hover hints: rest the pointer on an icon button for 120ms and its action name appears beside it — to the RIGHT of a vertical rail icon (centred on that row, flipping to the left when the window's right edge is in the way) and below everywhere else; greyed-out actions explain themselves too (e.g. `Hide · Not available in the current state`). The hint card lives on the window layer, so the bottom workbench cannot clip it — sweeping across a row of icons does not flash, and a pressed pointer / scroll / resize drops it immediately.
 - Status line: branch, upstream, ahead/behind, stash count, busy indicator.
 - Slow-load trace: if a panel load takes more than 2 seconds, a compact trace appears with per-phase progress (fetch / summary / stats / branches / log), the active git subcommand and its runtime, a "host not responding" state after 2.5 seconds, and one-click copy of a diagnostic JSON. Normal loads and background polling stay quiet.
