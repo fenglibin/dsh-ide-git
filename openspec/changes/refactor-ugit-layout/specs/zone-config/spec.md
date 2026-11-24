@@ -41,7 +41,7 @@
 #### Scenario: 提交框换落点
 
 - **WHEN** 用户把 `commitBoxPlace` 设为 `panelBottom`
-- **THEN** `ChangesPanel` MUST 不渲染内部 `composer`（`showComposer===false`）
+- **THEN** `commitBoxPlace` MUST 通过 `commitBoxDocked` class 把同一份有状态 composer 贴到变更列底（不提升、不复制 state），`affixes.commitBox===false` 时 MUST 通过 `commitBoxHidden` 不渲染 composer
 - **AND** `UgitBody` MUST 用共享 `CommitBox` 在面板底部渲染同一个提交入口
 - **AND** 提交/提交并推送/AI 写信息/amend 行为 MUST 与改动前一致，`confirm: true` MUST 不被绕过
 
