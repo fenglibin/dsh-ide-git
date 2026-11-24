@@ -10378,6 +10378,126 @@ window.__ModuleLoader__.load({
       try { window.localStorage.setItem(PANES_KEY, JSON.stringify(normalizePanes(config))) } catch (error) { void error }
     }
 
+    /* ============================== ugit layout ============================== */
+
+    /* The ugit layout is described by ONE browser-local document. It sits right
+       after the pane sizing core on purpose: both are pure/storage layers, and
+       this slot is outside every tests/smoke.mjs slice boundary (the rail config
+       core, the writeRailFields span and the dock action core all end or start
+       elsewhere). Adding a zone is a change to UGIT_ZONE_SPECS only. */
+    const LAYOUT_KEY = 'dsh-ide-git.layout.v2'
+    /* Column zones. `id` is the stable key persisted in LAYOUT_KEY; `pane` maps
+       a zone onto the existing draggable pane key (PANES_KEY), and `null` means
+       the zone is sized by flex or by extraRatios instead. `visible` is the
+       default; a zone the user hid lives in LAYOUT_KEY.hidden. */
+    const UGIT_ZONE_SPECS = [
+      { id: 'dirTree', label: 'layout.zone.dirTree', pane: 'tree', visible: true, width: 200, min: 140, max: 560, icon: 'folder' },
+      { id: 'changes', label: 'layout.zone.changes', pane: 'changes', visible: true, width: 290, min: 200, max: 640, icon: 'file' },
+      { id: 'diff', label: 'layout.zone.diff', pane: null, visible: true, width: 0, min: 0, max: 0, icon: 'diff' },
+      { id: 'branches', label: 'layout.zone.branches', pane: null, visible: false, width: 220, ratio: 0.20, min: 160, max: 480, icon: 'branch' },
+      { id: 'history', label: 'layout.zone.history', pane: null, visible: false, width: 360, ratio: 0.34, min: 240, max: 720, icon: 'history' },
+    ]
+    const UGIT_ZONE_IDS = UGIT_ZONE_SPECS.map((spec) => spec.id)
+    /* Affix zones are toggled but never reordered; commitBox has two placements. */
+    const UGIT_AFFIX_SPECS = [
+      { id: 'toolbar', label: 'layout.affix.toolbar', visible: true },
+      { id: 'iconRail', label: 'layout.affix.iconRail', visible: true },
+      { id: 'commitBox', label: 'layout.affix.commitBox', visible: true },
+    ]
+    const UGIT_AFFIX_IDS = UGIT_AFFIX_SPECS.map((spec) => spec.id)
+    const UGIT_COMMIT_PLACES = ['changesBottom', 'panelBottom']
+    /* Each tab names its candidate column zones. Visibility wins over this list
+       (a zone explicitly opened is appended); see normalizeLayout. */
+    const UGIT_TABS = {
+      changes: { zones: ['dirTree', 'changes', 'diff'] },
+      workspace: { zones: ['branches', 'dirTree', 'changes', 'diff'] },
+      history: { zones: ['history', 'diff'] },
+    }
+    const UGIT_TAB_IDS = Object.keys(UGIT_TABS)
+
+    /* Pure normalizer: unknown/duplicate ids are dropped, missing ids are filled
+       from the spec defaults, and every field is coerced to a known type. A bad
+       or half-written localStorage value can never reach the renderer. */
+    function normalizeLayout(raw) {
+      const source = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+      const hidden = []
+      const seenHidden = new Set()
+      /* Spec-invisible zones start hidden. An empty (or absent) document must
+         still hide branches/history, otherwise the default "changes" tab would
+         show five columns and drown the diff. A stored list REPLACES this
+         default, so a user who opened those zones keeps them open. */
+      if (Array.isArray(source.hidden)) {
+        for (const id of source.hidden) {
+          if (typeof id !== 'string' || UGIT_ZONE_IDS.indexOf(id) < 0 || seenHidden.has(id)) continue
+          seenHidden.add(id)
+          hidden.push(id)
+        }
+      } else {
+        for (const spec of UGIT_ZONE_SPECS) {
+          if (spec.visible === false) { seenHidden.add(spec.id); hidden.push(spec.id) }
+        }
+      }
+      const affixes = {}
+      for (const spec of UGIT_AFFIX_SPECS) {
+        const value = source.affixes !== null && typeof source.affixes === 'object' ? source.affixes[spec.id] : undefined
+        affixes[spec.id] = typeof value === 'boolean' ? value : spec.visible
+      }
+      const place = source.affixes !== null && typeof source.affixes === 'object' ? source.affixes.commitBoxPlace : undefined
+      affixes.commitBoxPlace = UGIT_COMMIT_PLACES.indexOf(place) >= 0 ? place : 'changesBottom'
+      const activeTab = UGIT_TAB_IDS.indexOf(source.activeTab) >= 0 ? source.activeTab : 'changes'
+      const tabs = {}
+      for (const tab of UGIT_TAB_IDS) {
+        const entry = source.tabs !== null && typeof source.tabs === 'object' ? source.tabs[tab] : undefined
+        tabs[tab] = { order: normalizeLayoutOrder(entry === null || typeof entry !== 'object' ? undefined : entry.order) }
+      }
+      const extraRatios = {}
+      const storedRatios = source.extraRatios !== null && typeof source.extraRatios === 'object' ? source.extraRatios : {}
+      for (const spec of UGIT_ZONE_SPECS) {
+        /* Only the two optional columns carry a remembered ratio; `diff` is the
+           flex:1 main pane and must never be measured into a ratio. */
+        if (spec.pane !== null || typeof spec.ratio !== 'number') continue
+        const value = storedRatios[spec.id]
+        extraRatios[spec.id] = typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 1
+          ? value : spec.ratio
+      }
+      return {
+        version: 2,
+        activeTab: activeTab,
+        tabs: tabs,
+        hidden: hidden,
+        order: normalizeLayoutOrder(source.order),
+        affixes: affixes,
+        extraRatios: extraRatios,
+      }
+    }
+
+    /* An order is a comma-separated list of zone ids. Unknown/duplicate ids are
+       dropped; '' means the code default (UGIT_ZONE_SPECS order). */
+    function normalizeLayoutOrder(text) {
+      if (typeof text !== 'string' || text === '') return ''
+      const seen = new Set()
+      const kept = []
+      for (const id of text.split(',')) {
+        if (UGIT_ZONE_IDS.indexOf(id) < 0 || seen.has(id)) continue
+        seen.add(id)
+        kept.push(id)
+      }
+      return kept.join(',')
+    }
+
+    function readLayout() {
+      try {
+        const raw = window.localStorage.getItem(LAYOUT_KEY)
+        if (raw === null || raw === '') return normalizeLayout(null)
+        return normalizeLayout(JSON.parse(raw))
+      } catch (error) { void error }
+      return normalizeLayout(null)
+    }
+
+    function writeLayout(config) {
+      try { window.localStorage.setItem(LAYOUT_KEY, JSON.stringify(normalizeLayout(config))) } catch (error) { void error }
+    }
+
     /* ============================== dock actions ============================== */
 
     /* ---- dock action core (pure: tests/smoke.mjs slices this block) ---- */

@@ -2610,3 +2610,66 @@ test('closing a diff invalidates the in-flight response and the dedupe window (v
   assert.doesNotMatch(client, /entry\.run = \(\) => \{ setPatch\(''\)/, 'no clear path bypasses resetDiff')
 })
 
+
+test('ugit layout config: normalizer is pure and bad localStorage never throws (v0.37.0)', () => {
+  // The layout document is the single browser-local source of truth for zone
+  // visibility / order / tab / affixes. Slice it out of the client half the
+  // same way paneCore() does, so the test drives the real shipped code.
+  const start = client.indexOf('/* ============================== ugit layout ==============================')
+  const end = client.indexOf('/* ============================== dock actions ==============================')
+  assert.ok(start >= 0 && end > start, 'the ugit layout block keeps both markers')
+  const block = client.slice(start, end)
+  assert.match(block, /const LAYOUT_KEY = 'dsh-ide-git\.layout\.v2'/)
+  assert.match(block, /const UGIT_ZONE_SPECS = \[/)
+  assert.match(block, /const UGIT_AFFIX_SPECS = \[/)
+  assert.match(block, /const UGIT_TABS = \{/)
+  assert.doesNotMatch(block, /RAIL_KEY/, 'the retired rail key must not come back as a fallback')
+
+  const core = new Function('window', block
+    + '\nreturn { LAYOUT_KEY: LAYOUT_KEY, UGIT_ZONE_IDS: UGIT_ZONE_IDS, UGIT_TAB_IDS: UGIT_TAB_IDS,'
+    + ' normalizeLayout: normalizeLayout, normalizeLayoutOrder: normalizeLayoutOrder,'
+    + ' readLayout: readLayout, writeLayout: writeLayout }')(undefined)
+
+  // 1 — defaults: all spec-visible zones on, the two extra zones hidden.
+  const fallback = core.normalizeLayout(null)
+  assert.equal(fallback.version, 2)
+  assert.equal(fallback.activeTab, 'changes')
+  assert.deepEqual(fallback.hidden, ['branches', 'history'])
+  assert.equal(fallback.order, '')
+  assert.deepEqual(fallback.affixes, { toolbar: true, iconRail: true, commitBox: true, commitBoxPlace: 'changesBottom' })
+  for (const tab of core.UGIT_TAB_IDS) assert.equal(fallback.tabs[tab].order, '')
+
+  // 2 — unknown / duplicate ids are dropped; illegal tab and placement fall back.
+  const dirty = core.normalizeLayout({
+    activeTab: 'nope',
+    hidden: ['nope', 'changes', 'changes', 'dirTree'],
+    order: 'diff,changes,nope,diff,dirTree',
+    affixes: { toolbar: 'yes', iconRail: false, commitBox: 7, commitBoxPlace: 'nowhere' },
+    extraRatios: { branches: 0.2, history: 9, diff: -1, nope: 0.5 },
+    tabs: { changes: { order: 'changes,diff,nope' } },
+  })
+  assert.equal(dirty.activeTab, 'changes')
+  assert.deepEqual(dirty.hidden, ['changes', 'dirTree'])
+  assert.equal(dirty.order, 'diff,changes,dirTree')
+  assert.deepEqual(dirty.affixes, { toolbar: true, iconRail: false, commitBox: true, commitBoxPlace: 'changesBottom' })
+  assert.deepEqual(dirty.extraRatios, { branches: 0.2, history: 0.34 })
+  assert.equal(dirty.tabs.changes.order, 'changes,diff')
+
+  // 3 — readLayout/writeLayout round-trip, try/catch on bad JSON, no RAIL_KEY.
+  const store = new Map()
+  const fakeWindow = { localStorage: {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => { store.set(k, v) },
+  } }
+  const io = new Function('window', block
+    + '\nreturn { LAYOUT_KEY: LAYOUT_KEY, normalizeLayout: normalizeLayout,'
+    + ' readLayout: readLayout, writeLayout: writeLayout }')(fakeWindow)
+  const written = core.normalizeLayout({ hidden: ['dirTree'], activeTab: 'history' })
+  io.writeLayout(written)
+  assert.deepEqual(io.readLayout(), written, 'a written document round-trips')
+  store.set(io.LAYOUT_KEY, '{not json')
+  assert.doesNotThrow(() => io.readLayout())
+  assert.deepEqual(io.readLayout(), fallback, 'a corrupt document falls back to defaults')
+  store.delete(io.LAYOUT_KEY)
+  assert.deepEqual(io.readLayout(), fallback, 'an absent document falls back to defaults')
+})
