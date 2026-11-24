@@ -1,6 +1,6 @@
 # ugit 布局重构设计（2026-11-24，审查修订版）
 
-> 本文件是 `record_design` 摘要指向的**完整方案草稿**，也是本次交付的完整设计文档。当前任务为 **l1**，`get_delivery_task` 返回 `level: "l1"`，仓库中**不存在** `openspec/` 目录，因此没有 `record_spec(kind:'design')` 产出的第二份设计文档。`.dsh/design/task-bf6fda5a-fec3-495f-9d29-cb60c2acc2eb.md` 是本文的摘要，若两者冲突**以本文为准**。
+> 本文件是 `record_design` 摘要指向的**完整方案草稿**，也是本次交付的完整设计文档。任务已因补齐 OpenSpec 工件被抬升为 **l2**（`get_delivery_task` 返回 `level: "l2"`），因此另有第二份设计文档 `openspec/changes/refactor-ugit-layout/design.md`（`record_spec(kind:'design')` 写入）。**两份都要自足、都要满足审查第 6/7/8 条**（每个 `### D<n>` 决策含「选了什么/为什么/被否决备选/影响面」）；openspec 版不再只做索引。`.dsh/design/task-bf6fda5a-fec3-495f-9d29-cb60c2acc2eb.md` 是本文的摘要，若三者冲突**以本文为准**，但摘要中的过时结论不得再被当作事实。
 >
 > 本文所有行号以当前 `src/client.js`（20972 行）为准，引用符号均已用 `grep -n` 逐项确证（见附录 A 确证清单）。
 
@@ -58,6 +58,7 @@
 | 照参考图复刻「文件视图 / 查看修改」按钮、「监视」开关、「UTF-8 / LF」编码指示、底部状态栏「5.5.3.0 ARM64 Tencent」 | **不做** | 属于 ugit 编辑器/平台外壳，不是 Git 工具窗口职责；本插件是 DSH 侧边栏 Tab，宿主外壳不由它画 |
 | 照参考图复刻目录树里的「新版本已发布 升级」胶囊、左下角云/机器人图标、右下角头像 | **不做** | 平台推广/账号装饰，与 Git 无关 |
 | 新增「三列表 / 树形」视图切换的**新状态** | **不做新状态**，复用既有 `groupBy` | 见 §1.3，已有 `readChangesGroupBy`/`setGroupBy`/`onGroupBy` 与 21 门 `changes.group*` 文案 |
+| 照参考图在顶栏做 `2月前 ▾` / `4天前 ▾` 两个时间下拉，或把历史筛选搬到顶栏 | **不做**，见 D3「能力缺口显式列出」 | 本仓库只有 `HistoryList` 单一 `since` 内部 state(14571) 与单一日期下拉(14847)，无 `until`、无第二下拉、无 props 入参；实现需改 `HistoryList` props + `rows` 派生 + 宿主 `log` 方法表，超出视觉重构范围。历史筛选仍留历史 Tab 的 `filterBar`(14814) |
 
 ### 0.5 需求歧义、矛盾与采用的解释
 
@@ -67,7 +68,7 @@
 | req/6「调整位置大小」 | 「大小」= 列宽拖拽（沿用 `Gutter`+`PANES_KEY`）；「位置」= ①列的左右次序（上移/下移）②提交框落点（变更列底部 / 面板底部） | 被排除：自由二维停靠 / 浮动窗口 —— 与 `Gutter` 的 `previousElementSibling` 邻接假设（12954）冲突，且截图只呈现横向三列 |
 | a/2「顶部 Tab 切换独立视图」vs req/3「分支/提交记录无法隐藏」 | 二者叠加：Tab 决定**默认列集合**，显隐决定**该集合内是否还能把某区加回来/去掉**；「历史」Tab 里提交图谱默认可见，「变更」Tab 里默认不可见 | 被排除：Tab 与显隐二选一 —— 那样「打开分支树」在变更 Tab 里做不到，违背 req/5 |
 | 「变更 Tab 的列集合」与全局 `hidden[]` 谁优先 | **显隐优先**：`UGIT_TABS[activeTab].zones` 给出候选列，`hidden[]` 再从中剔除；`branches`/`history` 在任何 Tab 都可由设置显式打开，打开后追加到该 Tab 列集合尾部 | 被排除：Tab 硬覆盖显隐 —— 用户「打开」的动作会被切 Tab 悄悄撤销 |
-| req/4「按 ugit 布局」的精确含义 | 以两张参考截图为准：单行顶栏 + 最左竖排图标 rail + 三列（目录树｜变更列表+列底提交框｜大号并排 split diff）；diff 面积最大 | 被排除：只调旧三栏的主次比例 —— 用户明确选了 a/1「直接替换」 |
+| req/4「按 ugit 布局」的精确含义 | 以两张参考截图为准：单行顶栏 + 最左竖排图标 rail + 三列（目录树｜变更列表+列底提交框｜大号并排 split diff）；diff 面积最大。**截图里属于 ugit 平台/编辑器外壳的元素（两个时间下拉、储藏变更、UTF-8/LF、文件视图等）按 §0.4/§1.3 逐项排除，不因「截图里有」就自动纳入范围** | 被排除：只调旧三栏的主次比例 —— 用户明确选了 a/1「直接替换」；也排除「截图逐像素复刻」—— 本插件是 DSH 侧边栏 Tab，宿主外壳与 ugit 编辑器能力不由它画 |
 | 「功能区」的两种可能所指 | 本文统一指**布局分区**（`UGIT_ZONE_SPECS` / `UGIT_AFFIX_SPECS`）；既有 `RAIL_SPECS` 的动作条按钮仍叫「动作」，属 `RAIL_CONFIG_IDS` 行 Config，不纳入本次显隐 | 被排除：把动作条也并入「功能区」—— 会撞 `tests/smoke.mjs:1659–1666` 的字段扫描与不变量 14 |
 
 ## 1. 信息架构（需求 req/1、req/2、req/4、a/1、a/2、a/4）
@@ -76,7 +77,7 @@
 
 ```
 ┌─ 单行顶栏 ─────────────────────────────────────────────────────────────────────┐
-│ yapidoc-maven-plugin ▾ │ 工作区 · 变更(高亮) · 历史 │ master ▾ │ 2月前 4天前 ▾ │ ↥更新 ⤓更新 ⇧推送 │ ⚙ ▢ │
+│ yapidoc-maven-plugin ▾ │ 工作区 · 变更(高亮) · 历史 │ master ▾ │ ↑7 ↓1 ▾ │ ↥更新 ⤓更新 ⇧推送 │ ⚙ ▢ │  ← 注：截图里的「2月前/4天前」两个下拉本次不做，见 §0.4 与 D3
 ├──┬──────────┬───────────────────────────┬─────────────────────────────────────┤
 │图│ 目录树    │ 变更 (37)  [三列表|树形]   │ 路径面包屑   文件视图 查看修改  ⋯ 监视 │
 │标│ 搜索框    │ Default ▾  状态分组+图标   │ 基础版本 ┃ 本地修改   UTF-8 · LF      │
@@ -99,7 +100,8 @@
 
 | 截图元素 | 做 / 不做 | 落点（做的话给具体符号） |
 |---|---|---|
-| 单行顶栏：仓库▾ / 工作区·变更·历史 / 分支▾ / 两个时间下拉 `2月前 ▾` `4天前 ▾` / 检查更新·更新·推送 / 窗口控制 | **做** | `UgitTopbar`（D3）：`RepoSelect`(13258)、`openBranchSwitchMenu`(17274)、`dig-track`(17297–17299)、`RAIL_SPECS` 的 fetch/pull/push/update 动作(9851)、`dockFaceOf`(10393) 的窗口控制。**两个时间下拉 = 历史筛选的 `since` / `until`**：复用 `FilterSelect`(13300) + `sinceThreshold`(14518) + 21 门 `filter.date`(434/864/…) 与 `HistoryList` 的 `onScopeChange`/`onPathFilter`(17355–17374)；旧布局里它们在 `HistoryList.filterBar`(14814)，本次**搬到顶栏**，见 D3 补充落点 |
+| 单行顶栏：仓库▾ / 工作区·变更·历史 / 分支▾ / ahead·behind chip / 检查更新·更新·推送 / 窗口控制 | **做** | `UgitTopbar`（D3）：`RepoSelect`(13258)、`openBranchSwitchMenu`(17274)、`dig-track`(17297–17299)、`RAIL_SPECS` 的 fetch/pull/push/update 动作(9851)、`dockFaceOf`(10393) 的窗口控制 |
+| 截图顶栏的 `2月前 ▾` / `4天前 ▾` 两个时间下拉 | **不做**（能力缺口，见 D3） | 本仓库只有 `HistoryList` 的**单一** `since` 内部 state(14571) + 单一日期下拉(14847，选项 today/week/month/year，`sinceThreshold` 14518)，**无 `until`、无第二个时间下拉、无 props 入参**。按 §0.4 边界不实现；历史筛选仍留在历史 Tab 的 `filterBar`(14814)，**不搬到顶栏**。确证命令：`grep -n "props\.(since\|until)" src/client.js`（零命中） |
 | 最左竖排图标 rail（提交/文件/收藏/搜索/… + 底部设置） | **做** | `UgitIconRail`（D3），复用 `RAIL_SPECS` 图标与 `renderRail` 的 `dig-rail-btn` 样式(18538–18543)；齿轮沿用 `.dig-rail-settings`(17939) |
 | 目录树列（搜索框 + 目录层级 + 文件图标） | **做** | `DirTree`（D4），复用 `buildDirForest`(10508) / `dirName`(10493) / `remoteTreeStripOf`(9241) / `TREE_KEY` 折叠(9701) |
 | 变更列头：`变更 (37)` 计数 + 锁定/刷新/展开/更多 四个图标 | **做（既有）** | `ChangesPanel` 的 `dig-changes-head`(14153) 已有 `dig-count` 与四个头部按钮(14153 后) + `showIgnored`/`sortKey`/`onMoreMenu`；`total` 来自 `summary`，无需改 |
@@ -205,13 +207,22 @@
 - *把新配置塞进现有 `PANES_KEY`* —— 否决：`normalizePanes`(10243) 只认固定六桶与 `tree/changes/diff` 三 key，塞进去会被静默丢弃（`smoke.mjs:1106–1129` 断言其形状）。
 - *不设权威表、直接在 JSX 里写 `hidden[]`* —— 否决：新增分区时旧文档会隐藏新区（不变量 14 的教训）。
 
-**影响面**：`src/client.js` 新增约 120 行纯配置函数（放在 `/* ---- end pane sizing core ---- */` 之后、`/* ---- rail config core` 之前，避开 smoke 的切片边界）；`tests/smoke.mjs` 新增切片断言；无宿主改动。
+**影响面**：`src/client.js` 新增约 120 行纯配置函数（**最终落点 `writePanes`(10379) 之后、`/* ---- dock action core`(10384) 之前**，见 §5 落点修正的二次确证）；`tests/smoke.mjs` 新增切片断言；无宿主改动。落点选择本身有取舍：放在 pane core 内会污染纯函数断言，放在 9963–10097 会被 `writeRailFields`/`migrateRailConfig` 两个切片吞掉，放在 10379–10384 是唯一既不切断切片、又紧邻 `readPanes`/`writePanes` 范式的位置。
 
 ### D3 顶部 Tab 视图集与次要视图降级
 
 **选了什么**：新 `UgitTopbar` 取代旧 `topBar`(17282–17307) 的两条大搜索框；保留 `RepoSelect`(13258)、`openBranchSwitchMenu`(17274–17280)、upstream ahead/behind chip(17297–17299)、动作图标（取自 `RAIL_SPECS`）、设置齿轮；新增 `工作区 | 变更 | 历史` 分段 Tab。`activeTab` 默认 `'changes'`，写入 `LAYOUT_KEY.activeTab` 并刷新恢复。「历史」Tab 整块渲染 `historyPane`(17338)，「工作区」Tab 暴露 `WorktreesPane`(14974) 与 `BranchTree`(13382)。
 
-**顶栏时间筛选的落点（清晰截图新增）**：截图顶栏有两个 `2月前 ▾` / `4天前 ▾` 下拉，语义是提交历史的 `since` / `until` 范围。复用既有 `FilterSelect`(13300)、`sinceThreshold`(14518)、21 门 `filter.date`(434/864/…) 与 `HistoryList` 的 `onScopeChange`/`onPathFilter`(17355–17374)；旧布局里这些控件在 `HistoryList.filterBar`(14814)，本次把**时间范围**两个下拉搬到 `UgitTopbar`（文本/哈希/路径过滤仍留在「历史」Tab 的过滤条，不挤进窄顶栏）。`UgitTopbar` 通过 props 接收 Panel 既有的 `scope`/`pathFilter`/`onScopeChange` 等回调，不新增数据请求、不改 `HistoryList` 的过滤逻辑。若顶栏宽度放不下，`iconRail` 与时间下拉按 `railCapacityOf`(17888) 的溢出规则收进「⋯ 更多」，不横向溢出。
+**顶栏时间筛选：能力缺口显式列出并当场解决（审查第 14 条，不安排后续阶段）**：清晰截图顶栏有两个 `2月前 ▾` / `4天前 ▾` 下拉，看似「起始/结束」提交时间范围。但 `grep -n` / `sed` 确证本仓库**不具备**这个能力：
+- `HistoryList`(14532) 只有一个 `since` 内部 state(14571) 与一个日期下拉(14847)，选项是 `today/week/month/year`（`sinceThreshold` 14518–14523），**没有 `until`、没有第二个时间下拉、没有 `2月前/4天前` 这类自由标签**；
+- `HistoryList` 的 props 契约里**没有** `props.since` / `props.until` / `props.onSince` / `props.onDate`（`grep -n "props\.(since|until|dateRange|onSince|onDate)" src/client.js` 零命中）；
+- `filter.date`(434/864/…) 是这**一个**下拉的标签文案，不是「时间范围」能力；`onScopeChange`(17361) 管的是分支范围 `scope`，不是时间。
+
+**采用的解释与做法**：截图那两个下拉是 ugit 对「最近两次提交时间」的**展示性**标签，不是可复用的过滤控件；按 §0.4「照参考图复刻平台/编辑器装饰不做」的同一边界，本次**不实现这两个下拉、不新增 `until` 能力**。历史筛选保持仓库现状：`HistoryList.filterBar`(14814) 的单一 `since` 下拉 + 文本/哈希/分支/作者/路径过滤，全部留在「历史」Tab 的过滤条（旧布局 hideSearch 14814/17360 已如此），**不搬到顶栏**。顶栏只放仓库▾、分支▾、Tab、ahead/behind chip、动作图标、齿轮、窗口控制。
+
+**被排除的解释 / 理由**：①「把 `since` 拆成两个搬到顶栏、再造一个 `until`」—— 否决：需要给 `HistoryList` 新增 props、改 `rows` 派生(14617 `sinceThreshold(since)`)、给宿主 `log` 方法表加参数，超出 req/1–8 的视觉重构范围，且会碰 `tests/api.test.mjs` 的 log 断言；②「照截图字面画两个假下拉（点了没反应）」—— 否决：假控件比没有更糟，违背 req/1「不习惯」的初衷。
+
+**若读者仍要确认**：跑 `grep -n "props\.(since|until)" src/client.js`（零命中）与 `sed -n '14565,14575p;14840,14855p' src/client.js`（看单一 `since` state 与单一日期下拉即可确证）。顶栏溢出规则仍按 `railCapacityOf`(17888) 收进「⋯ 更多」。
 
 **为什么**（req/3、a/2、req/4）：旧顶栏的「分支或标签」「文本或哈希」两个大搜索框正是用户点名「被重点突出」的元素；把它们收进分支下拉与「历史」Tab 的过滤条，主视野才能让给变更/diff。
 
@@ -356,7 +367,7 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 | `src/client.js:10493` `dirName` / `10508` `buildDirForest` / `9241` `remoteTreeStripOf` | **不动**，由新 `DirTree` 调用 | D4 |
 | `src/client.js:9701–9715` `TREE_KEY` 读写 | **不动**，复用给 `DirTree` 折叠 | D4 |
 | `src/client.js:13757` `ChangesPanel` | **仅新增** `showComposer` prop；抽出 `CommitBox`；其余 props / `head` 断言不动 | D6 |
-| 新增 `UGIT_ZONE_SPECS` / `UGIT_AFFIX_SPECS` / `UGIT_TABS` / `LAYOUT_KEY` / `normalizeLayout` / `readLayout` / `writeLayout` | 放在 `/* ---- end pane sizing core ---- */`(10366) 之后、`/* ---- rail config core`(9921) **之前**——注意顺序：9921 在 10366 之前，故实际落点为 **rail config core 结束标记(9963) 之后、`migrateRailConfig`(10097) 之前**，避开 smoke 的所有切片边界 | D2 |
+| 新增 `UGIT_ZONE_SPECS` / `UGIT_AFFIX_SPECS` / `UGIT_TABS` / `LAYOUT_KEY` / `normalizeLayout` / `readLayout` / `writeLayout` | **最终安全落点**：`writePanes`(10379) 结束之后、`/* ---- dock action core`(10384) 开始之前（经 smoke 全部 `client.indexOf` 切片标记确证不在任何切片内部，见 §5 落点修正） | D2 |
 | 新增 `UgitTopbar` / `UgitIconRail` / `DirTree` / `UgitBody` / `UgitLayoutSettings` / `CommitBox` | 放在 `RailSettings`(12653) 附近的组件区 | D3/D4/D6 |
 | `src/client.js:17282–17307` `topBar` | 替换为 `UgitTopbar`（保留 `RepoSelect`/分支下拉/chip/齿轮/动作图标） | D3 |
 | `src/client.js:17999–18055` body 五分支 | 替换为单个 `UgitBody`（按配置 map 列 + gutter；保留 `dig-body-columns`/`stack`/`compact` 与 `[data-pane]`，含 `data-pane="diff"`） | D1 |
@@ -373,7 +384,8 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 | `README.md` / `README_EN.md` / `CHANGELOG.md` / `AGENTS.md` | 文字/纪律同步 | D7 |
 | `src/host/*` / `tests/api.test.mjs` / `repos.test.mjs` / `graph.test.mjs` / `src/host/config.js` | **不动** | 0.3 |
 
-> 落点修正：原稿写「放在 pane sizing core 之后、rail config core 之前」在行号上不成立（rail config core 9921 早于 pane core 10155）。已改为「rail config core 结束(9963) 之后、`migrateRailConfig`(10097) 之前」，该区间确认为空档，不切断任何 `/* ---- … core` 切片标记。
+> **落点修正（二次确证，命令见附录 A）**：原稿写「pane sizing core 之后、rail config core 之前」在行号上不成立（rail config core 9921 早于 pane core 10155）；第一次修订写「rail config core 结束(9963) 之后、`migrateRailConfig`(10097) 之前」**同样不成立** —— `sed -n '9963,10100p' src/client.js` 显示该区间实际有 `readCommitSettings`(9968)、`readDateFormat`、`railFormReady`、`conversationImmersiveEnabled`、`readRailConfig`(10007)、`writeRailConfig`(10019)、`writeRailFields`(10063)、`writeRailField`(10089) 共 8 个函数，且 `tests/smoke.mjs:1268` 的 `writeRailFields → /* One-shot move…*/` 切片与 `:1530` 的 `migrateRailConfig → subscribeRailConfig` 切片都横跨此段，插进去会被切片吞掉或破坏断言。
+> **最终安全落点：`writePanes`(10379) 结束之后、`/* ---- dock action core`(10384) 开始之前**。该区间只有空行与一节注释；`grep -oE "client\.indexOf\('[^']+'\)" tests/smoke.mjs | sort -u` 确证它不在任何切片内部，`/* ---- end pane sizing core ---- */`(10366) 与 `/* ---- dock action core`(10384) 两个边界均不受影响。
 
 ## 6. 错误处理、边界与安全（回答第 16–21 条）
 
@@ -471,12 +483,14 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 | smoke 硬编码断言 | 918–940 / 1096–1098 / 1106–1129 / 1704–1708 / 1849–1860 / 2351–2372 / 1659–1666 | D1/D6 已列完整清单 |
 | `ssr-check.mjs:86` needles / `layout-probe.mjs:119` CHROMES / `conversation-probe.mjs:404` chrome | 已确证 | D1 兼容类名保留 |
 | `settings-card-probe.mjs:99–101` `visuals()` 扫 `[data-plugin-config] input[type=checkbox]` 全部；`:106` `input#dig-rail-<id>`；`:134` `ids[]` 连点 + `patchValues()` 比对 profile patch | 已确证 | **D6 据此改落点**：布局开关放齿轮、`RailSettingsCard` 只加只读说明与按钮（无 checkbox），探针零改动 |
+| **D2 落点二次确证**：`sed -n '9963,10100p' src/client.js` 显示 8 个函数；`grep -oE "client\.indexOf\('[^']+'\)" tests/smoke.mjs \| sort -u` 列出全部切片标记；`sed -n '10377,10390p' src/client.js` 显示 `writePanes`(10379) 与 `/* ---- dock action core`(10384) 之间为空档 | 已执行（本轮） | 9963–10097 区间**非空档**且被 `smoke.mjs:1268`/`:1530` 两个切片横跨；最终安全落点 = 10379 之后、10384 之前 |
+| **D3 能力缺口确证**：`grep -n "props\.(since\|until\|dateRange\|onSince\|onDate)" src/client.js` 零命中；`sed -n '14565,14575p;14840,14855p' src/client.js` 显示单一 `since` state(14571) 与单一日期下拉(14847，today/week/month/year) | 已执行（本轮） | 仓库**无** `until`、无第二个时间下拉、无 props 入参；截图两个时间下拉本次不做，历史筛选仍留 `HistoryList.filterBar`(14814) |
 
 ## 附录 B · 需求 ↔ 决策双向追溯表
 
 | 需求 / 约束 | 落点（决策编号或小节） |
 |---|---|
-| req/1 样式不习惯 | §1 信息架构、D1（替换 body）、D3（替换顶栏） |
+| req/1 样式不习惯 | §1 信息架构、D1（替换 body）、D3（替换顶栏；顶栏时间下拉按能力缺口排除，见 D3 与 §0.4） |
 | req/2 变更文件与 diff 重点突出 | §1（diff `flex:1` 主角）、D1（diff 列）、D5（默认 split）、D4（目录树只做定位不再抢面积） |
 | req/3 分支/提交记录被突出且无法隐藏 | §1.1（默认隐藏 `branches`/`history`）、§1.2（历史 Tab）、D3（顶栏降级 + 收敛状态机） |
 | req/4 按 ugit 布局 | §1（照截图骨架）、§1.1 分区表、D4（目录树）、D5（大 split diff） |
