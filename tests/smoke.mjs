@@ -2778,3 +2778,17 @@ test('ugit tabs reach their core columns and legacy hidden docs migrate (v0.37.0
     'UgitBody treats the tab candidate set as a hard boundary')
   assert.match(client, /legacyDefault !== true/, 'the migration guard is present')
 })
+
+test('ugit reference details: directory-tree header and flat changes list (v0.37.0)', () => {
+  // Final full-size reference screenshot: 目录树 column has a labeled header,
+  // and the changes column is ONE flat full-path list with NO group heads.
+  assert.match(client, /className: 'dig-dirtree-head'/,
+    'DirTree renders the 目录树 column header')
+  assert.match(client, /t\('layout\.zone\.dirTree'\)/, 'the header uses the shipped dictionary key')
+  assert.match(client, /onRefresh: \(\) => \{ void refresh\(\) \}/,
+    'the header refresh button is wired to the panel refresh')
+  assert.match(client, /ugitFlat: true/, 'the ugit layout requests the flat changes list')
+  assert.match(client, /if \(props\.ugitFlat === true\)/, 'ChangesPanel has the flat branch')
+  assert.match(client, /skip emitGroup's/, 'the flat branch omits group heads on purpose')
+  assert.match(client, /const head = props\.hideHeader/, 'the normal grouped view is unchanged')
+})

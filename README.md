@@ -26,7 +26,7 @@ DSH 自带的 Git 面板覆盖「暂存 / 提交 / 还原 / 看历史」;`dsh-id
 <table>
 <tr>
 <td align="center" width="58%"><img src="docs/screenshots/1-bottom-workbench.png" alt="ugit 布局:目录树 / 变更文件列表 / 大号并排 diff"/></td>
-<td valign="top"><b>ugit 布局(宽容器 → 三列)</b><br/>顶部是单行工具条:仓库 ▾、<b>工作区 / 变更 / 历史</b> 切换、当前分支 ▾、同步状态、更新与推送动作、<code>⚙</code> 设置;最左是竖排图标栏。主体三列:<b>目录树</b>(窄、可隐藏)、<b>变更文件列表</b>(状态分组 + 状态图标 + 列底提交框)、<b>大号并排 split diff</b>(<code>flex:1</code> 占满剩余宽度,是视觉主角:行号、语法高亮、± 统计、split/wrap 工具条)。分支树与提交图谱默认不在主视野,靠顶部 Tab 或设置唤出。<code>⚙</code> 里可逐区勾选显示/隐藏、上下移调列顺序、选默认 Tab 与提交框位置,调整后自动记忆到本浏览器(<code>dsh-ide-git.layout.v2</code>),刷新即恢复。</td>
+<td valign="top"><b>ugit 布局(宽容器 → 三列)</b><br/>顶部是单行工具条:仓库 ▾、<b>工作区 / 变更 / 历史</b> 切换、当前分支 ▾、同步状态、更新与推送动作、<code>⚙</code> 设置;最左是竖排图标栏。主体三列:<b>目录树</b>(窄、可隐藏)、<b>变更文件列表</b>(扁平全路径 + 状态图标 + ±统计 + 列底提交框)、<b>大号并排 split diff</b>(<code>flex:1</code> 占满剩余宽度,是视觉主角:行号、语法高亮、± 统计、split/wrap 工具条)。分支树与提交图谱默认不在主视野,靠顶部 Tab 或设置唤出。<code>⚙</code> 里可逐区勾选显示/隐藏、上下移调列顺序、选默认 Tab 与提交框位置,调整后自动记忆到本浏览器(<code>dsh-ide-git.layout.v2</code>),刷新即恢复。</td>
 </tr>
 </table>
 

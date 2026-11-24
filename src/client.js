@@ -13950,6 +13950,15 @@ window.__ModuleLoader__.load({
         onClick: () => { if (typeof props.onFile === 'function') props.onFile(entry.item, entry.group) },
       }, E('span', { className: 'dig-dirtree-leaf' }, baseName(entry.path))))
       return E('div', { className: 'dig-dirtree' },
+        /* ugit 的列头：标签 + 折叠/刷新动作（参考截图「目录树 F↓」）。
+           复用既有 RAIL_SPECS 的 refresh 动作语义，不新造请求/文案键。 */
+        E('div', { className: 'dig-dirtree-head' },
+          E('span', { className: 'dig-dirtree-head-label' }, t('layout.zone.dirTree')),
+          E('button', {
+            type: 'button', className: 'dig-icon-btn dig-icon-btn-small',
+            title: t('toolbar.refresh'),
+            onClick: () => { if (typeof props.onRefresh === 'function') props.onRefresh() },
+          }, E(Icon, { name: 'refresh', size: 12 }))),
         E('input', {
           className: 'dig-input dig-input-compact dig-dirtree-search', value: query, spellCheck: false,
           placeholder: t('filter.pathPlaceholder'),
@@ -14911,13 +14920,33 @@ window.__ModuleLoader__.load({
           out.push({ kind: 'group', key: 'group:' + key, h: ITEM_HEIGHTS.group, node: groupHead(key, title, entries) })
           emitRows(key, entries)
         }
+        /* ugit layout: one flat full-path list with NO group heads — the
+           reference screenshot shows 37 rows of 状态图标 + 目录/文件名 + ±统计.
+           Reuse the existing ChangeRow (depth -1 shows its dir segment), just
+           skip emitGroup's 分组头. All other callers keep the grouped view. */
+        if (props.ugitFlat === true) {
+          const flat = []
+          for (const [key, entries] of [['conflicted', conflicted], ['staged', staged], ['unstaged', unstaged], ['untracked', untracked], ['ignored', ignored]]) {
+            for (const item of entries) flat.push({ key: key, item: item })
+          }
+          flat.sort((a, b) => {
+            if (sortKey === 'path') return a.item.path.localeCompare(b.item.path)
+            if (sortKey === 'name') return baseName(a.item.path).localeCompare(baseName(b.item.path)) || a.item.path.localeCompare(b.item.path)
+            if (sortKey === 'status') return (a.item.index + a.item.worktree).localeCompare(b.item.index + b.item.worktree) || a.item.path.localeCompare(b.item.path)
+            return 0
+          })
+          for (const entry of flat) {
+            out.push({ kind: 'row', key: 'flat:' + entry.key + ':' + entry.item.path, h: ITEM_HEIGHTS.row, node: entryRow(entry.key, entry.item, -1) })
+          }
+          return out
+        }
         emitGroup('conflicted', fill(t('counts.conflicted'), { n: conflicted.length }), conflicted)
         emitGroup('staged', fill(t('counts.staged'), { n: staged.length }), staged)
         emitGroup('unstaged', fill(t('counts.unstaged'), { n: unstaged.length }), unstaged)
         emitGroup('untracked', fill(t('counts.untracked'), { n: untracked.length }), untracked)
         emitGroup('ignored', fill(t('counts.ignored'), { n: ignored.length }), ignored)
         return out
-      }, [conflicted, staged, unstaged, untracked, ignored, groupBy, foldedDirs, sortKey, t, selection, handleRowClick, props.onUnstageAll, props.onStageAll, props.onFolderMenu])
+      }, [conflicted, staged, unstaged, untracked, ignored, groupBy, foldedDirs, sortKey, t, selection, handleRowClick, props.onUnstageAll, props.onStageAll, props.onFolderMenu, props.ugitFlat])
       const changeOffsets = useMemo(() => {
         const sums = [0]
         for (const item of changeItems) sums.push(sums[sums.length - 1] + item.h)
@@ -18571,7 +18600,7 @@ window.__ModuleLoader__.load({
       const commitSettings = readCommitSettings()
       const changesPane = E(ChangesPanel, {
         t: t, ctx: props.ctx, summary: summary, busy: busy, compact: compact, hideHeader: compact,
-        groupBy: groupBy, sortKey: sortKey, onGroupBy: setGroupBy,
+        groupBy: groupBy, sortKey: sortKey, onGroupBy: setGroupBy, ugitFlat: true,
         foldedDirs: foldedDirs, onFoldedDirs: setFoldedDirs,
         onMoreMenu: moreMenu,
         request: request, cwd: cwd, sessionId: sessionId, commitSettings: commitSettings, base: base,
@@ -18888,6 +18917,7 @@ window.__ModuleLoader__.load({
               onFold: (id, open) => setFoldedDirs(Object.assign({}, foldedDirs, { [id]: !open })),
               onFile: (item, group) => showDiff({ path: item.path, staged: group === 'staged', untracked: group === 'untracked' }),
               onDir: () => setGroupBy('dir'),
+              onRefresh: () => { void refresh() },
             })),
           changes: E('div', { className: 'dig-pane dig-pane-changes', 'data-pane': 'changes', style: paneStyle('changes') }, changesPane),
           /* 主角列：fillDiff（style 为 null、dig-diff-pane-fill 撑满），绝不套
@@ -20089,6 +20119,8 @@ window.__ModuleLoader__.load({
       '.dig-commit-box-docked{margin-top:auto;border-top:1px solid var(--dsw-alias-border-l2)}',
       /* directory tree column */
       '.dig-dirtree{display:flex;flex-direction:column;min-height:0;flex:1;overflow:hidden}',
+      '.dig-dirtree-head{display:flex;align-items:center;gap:4px;flex:none;padding:3px 6px;border-bottom:1px solid var(--dsw-alias-border-l2);font-size:11px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
+      '.dig-dirtree-head-label{flex:1;overflow:hidden;text-overflow:ellipsis}',
       '.dig-dirtree-search{flex:none;margin:4px}',
       '.dig-dirtree-scroll{flex:1;min-height:0;overflow:auto}',
       '.dig-dirtree-dir,.dig-dirtree-file{display:flex;align-items:center;gap:4px;width:100%;border:0;background:transparent;color:var(--dsw-alias-label-primary);font-size:11px;text-align:left;padding:2px 4px;cursor:pointer;white-space:nowrap;overflow:hidden}',
