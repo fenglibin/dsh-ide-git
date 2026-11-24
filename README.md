@@ -25,8 +25,8 @@ DSH 自带的 Git 面板覆盖「暂存 / 提交 / 还原 / 看历史」;`dsh-id
 
 <table>
 <tr>
-<td align="center" width="58%"><img src="docs/screenshots/1-bottom-workbench.png" alt="底部工作台:分支树 / 提交图谱 / 变更与提交"/></td>
-<td valign="top"><b>底部工作台(宽扁 → 三栏)</b><br/>左列是 IDEA 式动作条:按<b>自身高度</b>决定放几个按钮,放不下的收进 <code>⋯</code>,末尾 <code>⚙</code> 可调顺序与显隐;中列是提交列表——列序与 IDEA 一致(<b>日期 → 提交人 → 图谱 → 分支标签 → 提交信息</b>),上方一排筛选(文本/哈希、分支或标签、提交人、日期、路径)与排序方向;右列是变更分组与提交框。</td>
+<td align="center" width="58%"><img src="docs/screenshots/1-bottom-workbench.png" alt="ugit 布局:目录树 / 变更文件列表 / 大号并排 diff"/></td>
+<td valign="top"><b>ugit 布局(宽容器 → 三列)</b><br/>顶部是单行工具条:仓库 ▾、<b>工作区 / 变更 / 历史</b> 切换、当前分支 ▾、同步状态、更新与推送动作、<code>⚙</code> 设置;最左是竖排图标栏。主体三列:<b>目录树</b>(窄、可隐藏)、<b>变更文件列表</b>(状态分组 + 状态图标 + 列底提交框)、<b>大号并排 split diff</b>(<code>flex:1</code> 占满剩余宽度,是视觉主角:行号、语法高亮、± 统计、split/wrap 工具条)。分支树与提交图谱默认不在主视野,靠顶部 Tab 或设置唤出。<code>⚙</code> 里可逐区勾选显示/隐藏、上下移调列顺序、选默认 Tab 与提交框位置,调整后自动记忆到本浏览器(<code>dsh-ide-git.layout.v2</code>),刷新即恢复。</td>
 </tr>
 </table>
 
@@ -55,7 +55,7 @@ DSH 自带的 Git 面板覆盖「暂存 / 提交 / 还原 / 看历史」;`dsh-id
 <table>
 <tr>
 <td align="center" width="58%"><img src="docs/screenshots/6-right-sidebar.png" alt="原生右侧栏里的同一面板"/></td>
-<td valign="top"><b>同一个注册,两种布局</b><br/>窄而高的<b>原生右侧栏</b>改用堆叠布局:动作条铺成顶部一行、变更在先、提交列表随后——面板只量自己的尺寸,从不猜自己在哪个容器里。截图顺序、演示仓库与干净环境都由 <code>scripts/screenshots.mjs</code> 复现。</td>
+<td valign="top"><b>同一个注册,窄容器自动降级</b><br/>窄而高的<b>原生右侧栏</b>按宽度自动收起目录树、优先保留变更列表与 diff,显隐偏好不丢——面板只量自己的尺寸,从不猜自己在哪个容器里(不变量 7)。截图顺序、演示仓库与干净环境都由 <code>scripts/screenshots.mjs</code> 复现。</td>
 </tr>
 </table>
 

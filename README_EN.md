@@ -14,8 +14,8 @@ DSH's built-in Git panel covers stage / commit / revert / history. `dsh-ide-git`
 
 <table>
 <tr>
-<td align="center" width="58%"><img src="docs/screenshots/1-bottom-workbench.png" alt="Bottom workbench: branch tree / commit graph / changes"/></td>
-<td valign="top"><b>Bottom workbench (wide → three panes)</b><br/>A JetBrains-style action rail whose button count follows the rail's <b>own height</b> (overflow folds into <code>⋯</code>, and <code>⚙</code> at the end reorders or hides actions), a commit list in IDEA column order (<b>date → author → graph → refs → subject</b>) with the filter row above it (text/hash, branch or tag, author, date, path), and the changes pane with the commit box.</td>
+<td align="center" width="58%"><img src="docs/screenshots/1-bottom-workbench.png" alt="ugit layout: directory tree / changed files / large side-by-side diff"/></td>
+<td valign="top"><b>ugit layout (wide container → three columns)</b><br/>A single-row toolbar (repository ▾, <b>Workspace / Changes / History</b> tabs, branch ▾, sync state, update &amp; push actions, <code>⚙</code>), a narrow icon rail on the far left, and three columns: a <b>directory tree</b> (narrow, hideable), the <b>changed-files list</b> (status groups + icons, commit box at the bottom of the column), and a <b>large side-by-side split diff</b> (<code>flex:1</code>, the visual protagonist: line numbers, syntax highlighting, ± stats, split/wrap tools). The branch tree and commit graph stay out of the default view and are reached through the tabs or the settings. In <code>⚙</code> each zone can be shown/hidden, columns reordered, the default tab and commit-box placement chosen — all remembered in this browser (<code>dsh-ide-git.layout.v2</code>) and restored on reload.</td>
 </tr>
 </table>
 
@@ -44,7 +44,7 @@ DSH's built-in Git panel covers stage / commit / revert / history. `dsh-ide-git`
 <table>
 <tr>
 <td align="center" width="58%"><img src="docs/screenshots/6-right-sidebar.png" alt="The same panel in the native right sidebar"/></td>
-<td valign="top"><b>One registration, two layouts</b><br/>In the narrow, tall <b>native right sidebar</b> the same panel stacks: rail as a single row on top, changes first, history below. The panel only measures itself — it never guesses which container it is in.</td>
+<td valign="top"><b>One registration, narrow containers degrade</b><br/>In the narrow, tall <b>native right sidebar</b> the directory tree collapses by width and the changes list + diff take priority, without losing the saved visibility preferences. The panel only measures itself — it never guesses which container it is in (invariant 7).</td>
 </tr>
 </table>
 

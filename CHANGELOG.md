@@ -3,6 +3,18 @@
 > 倒序排列,新版本条目在最上面。条目格式:`## vX.Y.Z — YYYY-MM-DD` + 类型(feat / fix / docs / chore)+ 要点 + 相关链接。
 > 纪律见 AGENTS.md「变更记录纪律」:发版前先更新本文件并随版本提交。
 
+## Unreleased
+
+**类型**:feat(ugit 布局重构)+ 外观
+
+- **默认视图改为 ugit 三列**:单行顶栏(仓库▾ / `工作区·变更·历史` Tab / 分支▾ / ahead-behind chip / 动作图标 / 齿轮 / 窗口控制)+ 最左竖排图标 rail + 三列主体(目录树窄列 | 变更文件列表+列底提交框 | 大号并排 split diff)。`diff` 列用 `flex:1` 占满剩余宽度成为视觉主角;旧「分支树 | 提交图谱 | 变更列表」三栏的宽容器 chrome 不再渲染。分支树/标签、提交图谱降级为默认隐藏、可经 Tab 或设置唤出。窄容器(原生右栏)仍按宽度自动降级为纵向堆叠,显隐偏好不丢。
+- **功能区可在设置里隐藏及打开、调顺序、自动记忆**:新增浏览器本地 `LAYOUT_KEY='dsh-ide-git.layout.v2'`,逐区双向 checkbox(勾选显示 / 取消隐藏)、上移下移调列顺序、默认 Tab、提交框位置、恢复默认布局。所有读写 `try/catch` 静默降级,`normalizeLayout` 丢弃未知/重复 id、按规格补齐、非法值回退,坏数据不白屏;写路径不回退退役键。列宽继续沿用 `PANES_KEY` 的 ratio 记忆(按 `columns:wide|tall` 分桶),`split/wrap` 沿用 `LINEDIFF_KEY`,目录树折叠沿用 `TREE_KEY`。设置入口在面板内齿轮 `RailSettings`,插件页设置卡不加 checkbox(避免与 `settings-card-probe` 的全量扫描冲突)。
+- **首次打开即并排 diff**:`readLineDiffPrefs` 默认值由 `{split:false}` 改为 `{split:true}`(仅影响从未操作过 split 的用户;曾有 stored 值的用户偏好保持)。`LineDiff` 的 split/wrap 工具条与 `onActiveFile` 上报链一字未改。
+- **目录树**:新增 `DirTree`,复用既有 `buildDirForest`/`dirName`/`remoteTreeStripOf`/`TREE_KEY`;点文件打开 diff、点目录切「按目录」分组,不新增列表过滤数据层。
+- **提交框位置**:`commitBoxPlace` 两值(`changesBottom` / `panelBottom`)通过 CSS class 切换同一份有状态提交框,草稿/amend/AI 状态不提升、不复制,`confirm: true` 与提交链路不动。
+- **词典与文档**:21 门词典(ZH/EN/19 门 LOCALES)新增 `layout.*` 键并逐门键集一致;`AGENTS.md` 不变量 7 改写为 ugit 分区模型;中英文 README 效果段文字改为 ugit 形态;`docs/screenshots/` 6 张效果图重拍为 ugit 形态。
+- **兼容性**:保留 `dig-root`/`dig-topbar`/`dig-shell`/`dig-empty`、`dig-body-columns|stack|compact`、`.dig-pane-*`、`[data-pane]`、`dig-root-narrow`、`RAIL_VIEW_IDS`、`splitTabs`/`tabPane`、`fillDiff`/`diffPaneOf` 签名,守住 ssr-check 四 needle、六个真机探针与 smoke 的 CSS/文本契约。宿主半、`config.js`、`RAIL_CONFIG_IDS`、方法表、写队列、撤回一律不动。
+
 ## v0.36.0 — 2026-11-21
 
 **类型**:feat(issue #28 的三向差异放置与「在右侧栏打开文件」)+ fix(issue #33 的加载语义 / issue #36 的 AI 路由可见性)

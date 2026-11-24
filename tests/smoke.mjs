@@ -2692,3 +2692,30 @@ test('ugit layout opens a side-by-side diff by default (v0.37.0)', () => {
   assert.deepEqual(core(broken).readLineDiffPrefs(), { split: true, wrap: false },
     'a corrupt preference falls back to split view')
 })
+
+test('ugit layout wiring: one document, four shells, no cross-layer reads (v0.37.0)', () => {
+  // The wide-container body is assembled by UgitBody from LAYOUT_KEY; the
+  // narrow-container legacy branches stay as responsive degradation. Pin the
+  // wiring so a future refactor cannot silently drop the config layer.
+  assert.match(client, /const \[layout, setLayout\] = useState\(readLayout\)/,
+    'Panel seeds the layout from the browser-local document')
+  assert.match(client, /E\(UgitTopbar, \{/, 'the single-row top bar is wired')
+  assert.match(client, /E\(UgitBody, \{/, 'the wide-container body is wired')
+  assert.match(client, /function UgitTopbar\(props\)/, 'UgitTopbar exists')
+  assert.match(client, /function UgitIconRail\(props\)/, 'UgitIconRail exists')
+  assert.match(client, /function UgitBody\(props\)/, 'UgitBody exists')
+  assert.match(client, /function UgitLayoutSettings\(props\)/, 'UgitLayoutSettings exists')
+  assert.match(client, /function DirTree\(props\)/, 'DirTree exists')
+  assert.match(client, /layoutEditor: E\(UgitLayoutSettings, \{/, 'the gear dialog mounts the layout editor')
+  // Only the storage layer and Panel may call readLayout/writeLayout.
+  const ioCalls = client.match(/readLayout\(\)|writeLayout\(/g) || []
+  assert.ok(ioCalls.length <= 5, 'layout IO stays in the storage layer (2 defs) + the 3 Panel writers (saw ' + ioCalls.length + ')')
+  // The diff column must never be sized by paneStyle('diff') (it returns a
+  // height and would squash the main pane to 55%).
+  assert.doesNotMatch(client, /E\(UgitBody[\s\S]{0,1200}paneStyle\('diff'\)/,
+    'UgitBody never feeds the diff column a height style')
+  // The plugin page card must stay free of layout checkboxes.
+  const card = client.slice(client.indexOf('function RailSettingsCard('), client.indexOf('function RailSettings('))
+  assert.doesNotMatch(card, /layoutToggle|layoutSelect|UgitLayoutSettings/,
+    'settings-card-probe sees no new checkboxes')
+})
