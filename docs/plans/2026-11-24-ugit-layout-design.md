@@ -99,14 +99,15 @@
 
 | 截图元素 | 做 / 不做 | 落点（做的话给具体符号） |
 |---|---|---|
-| 单行顶栏：仓库▾ / 工作区·变更·历史 / 分支▾ / 时间 chip / 更新·推送 / 窗口控制 | **做** | `UgitTopbar`（D3）：`RepoSelect`(13258)、`openBranchSwitchMenu`(17274)、`dig-track`(17297–17299)、`RAIL_SPECS` 的 fetch/pull/push/update 动作(9851)、`dockFaceOf`(10393) 的窗口控制 |
+| 单行顶栏：仓库▾ / 工作区·变更·历史 / 分支▾ / 两个时间下拉 `2月前 ▾` `4天前 ▾` / 检查更新·更新·推送 / 窗口控制 | **做** | `UgitTopbar`（D3）：`RepoSelect`(13258)、`openBranchSwitchMenu`(17274)、`dig-track`(17297–17299)、`RAIL_SPECS` 的 fetch/pull/push/update 动作(9851)、`dockFaceOf`(10393) 的窗口控制。**两个时间下拉 = 历史筛选的 `since` / `until`**：复用 `FilterSelect`(13300) + `sinceThreshold`(14518) + 21 门 `filter.date`(434/864/…) 与 `HistoryList` 的 `onScopeChange`/`onPathFilter`(17355–17374)；旧布局里它们在 `HistoryList.filterBar`(14814)，本次**搬到顶栏**，见 D3 补充落点 |
 | 最左竖排图标 rail（提交/文件/收藏/搜索/… + 底部设置） | **做** | `UgitIconRail`（D3），复用 `RAIL_SPECS` 图标与 `renderRail` 的 `dig-rail-btn` 样式(18538–18543)；齿轮沿用 `.dig-rail-settings`(17939) |
 | 目录树列（搜索框 + 目录层级 + 文件图标） | **做** | `DirTree`（D4），复用 `buildDirForest`(10508) / `dirName`(10493) / `remoteTreeStripOf`(9241) / `TREE_KEY` 折叠(9701) |
-| 变更列头：`变更 (37)` 计数 | **做（既有）** | `ChangesPanel` 的 `dig-changes-head`(14153) 已有 `dig-count`；`total` 来自 `summary`，无需改 |
+| 变更列头：`变更 (37)` 计数 + 锁定/刷新/展开/更多 四个图标 | **做（既有）** | `ChangesPanel` 的 `dig-changes-head`(14153) 已有 `dig-count` 与四个头部按钮(14153 后) + `showIgnored`/`sortKey`/`onMoreMenu`；`total` 来自 `summary`，无需改 |
 | 变更列头：`三列表 / 树形` 切换 | **做（复用既有，不新造状态）** | 既有 `groupBy`(15682) + `readChangesGroupBy`(11398) + `setGroupBy`(15684) + `onGroupBy: setGroupBy`(17685) + 21 门 `changes.groupFlat`/`changes.groupDir`/`changes.groupBy` 文案(182–184 等)。**注意**：截图文案是「三列表/树形」，既有文案是「平铺/按目录」，语义对应但字面不同；本次**不新增文案键**（避免 21 门同步成本），沿用既有文案，`UgitBody` 把它放在变更列头右侧 |
-| 变更列头：`Default ▾` 变更列表筛选、锁定/刷新图标 | **做（既有）** | `ChangesPanel` 的 `dig-changes-head` 四个头部按钮(14153 后) + `showIgnored`/`sortKey`/`onMoreMenu` |
-| 变更行：状态图标 + 路径 + 目录分组 | **做（既有）** | `ChangeRow`(13718) / `ChangesPanel` 的 `groupBy:'dir'`(13790) / `foldedDirs`(13796) |
-| 大号 split diff：路径面包屑 + 基础版本┃本地修改 + 行号 + 高亮 + 同步滚动 | **做** | `fillDiff`(17960) → `DiffBody`(11134) → `LineDiff`(11548)，默认 `split:true`（D5）；「在右侧栏打开」沿用 `diff.sidebar.*`(17410–17417) |
+| 变更列头：`Default ▾`（排序下拉） | **做（复用既有，不新造状态）** | 既有 `sortKey`(15687) + `setSortKey`/`sort()`(17550–17553) 的 `more.sortGit`/`more.sortPath`/`more.sortName`/`more.sortStatus` 四选一菜单(17550–17553)；`ChangesPanel` 按 `sortKey` 排序(13952–13954)。截图字面「Default」对应 `sortGit`，本次**不新增文案键**，沿用既有菜单 |
+| 变更行：黄色 `M` / 绿色 `A` / `?` 状态图标 + 路径 + 目录分组 + 选中高亮 | **做（既有）** | `ChangeRow`(13718) 的 `dig-file-status dig-file-status-<M\|A\|U\|…>`(13741) + `dig-row-selected`(13730) / `ChangesPanel` 的 `groupBy:'dir'`(13790) / `foldedDirs`(13796) / `onSelectionChange`(17705) |
+| 大号 split diff：路径面包屑 + 基础版本┃本地修改 + 行号 + Shiki 高亮 + ±统计 + 左右同步滚动 + `UTF-8 / LF` 字样 | **做（同步滚动/高亮既有；`UTF-8 / LF` 不做）** | `fillDiff`(17960) → `DiffBody`(11134) → `LineDiff`(11548)，默认 `split:true`（D5）；同步滚动 = `SplitColumns`(11459) 的 `scrollLeft`/`scrollTop` 镜像(11470)；「在右侧栏打开」沿用 `diff.sidebar.*`(17410–17417)。`UTF-8 / LF` 是编辑器编码指示，§0.4 已表态不做 |
+| diff 头部：`文件视图 / 查看修改 / ⋯ / 监视` | **不做** | §0.4 / §1.3：属 ugit 编辑器工具条，非 Git 工具窗口职责 |
 | 提交框：待提交(0) / 储藏变更 / 提交信息框 / 提交至 master ▾ | **只做「提交信息框」，其余不做** | `CommitBox`（D6 从 `ChangesPanel` 14090–14160 抽出）：保留 `textarea`(`changes.commitPlaceholder`)、`amend`(14140)、AI 写信息(14124–14132)、`提交`(14151)、`提交并推送`(14155, `changes.commitAndPush`)。「储藏变更」复选框 / 「推送远程」单选 / 「待提交(N)」计数 / 「提交至 <分支>」文案**不新增**（§0.4 已表态），理由：会引入未要求的提交策略语义并触碰不变量 4 的确认链路；`stashPush` / `commitAndPush` 既有能力仍在动作条里可达 |
 | `文件视图 / 查看修改 / ⋯ / 监视 / UTF-8 / LF` | **不做** | §0.4 已表态：属 ugit 编辑器外壳，非 Git 工具窗口职责 |
 | 顶部「新版本已发布 升级」胶囊、底部平台状态栏、云/机器人/头像图标 | **不做** | §0.4 已表态：平台推广/账号装饰 |
@@ -209,6 +210,8 @@
 ### D3 顶部 Tab 视图集与次要视图降级
 
 **选了什么**：新 `UgitTopbar` 取代旧 `topBar`(17282–17307) 的两条大搜索框；保留 `RepoSelect`(13258)、`openBranchSwitchMenu`(17274–17280)、upstream ahead/behind chip(17297–17299)、动作图标（取自 `RAIL_SPECS`）、设置齿轮；新增 `工作区 | 变更 | 历史` 分段 Tab。`activeTab` 默认 `'changes'`，写入 `LAYOUT_KEY.activeTab` 并刷新恢复。「历史」Tab 整块渲染 `historyPane`(17338)，「工作区」Tab 暴露 `WorktreesPane`(14974) 与 `BranchTree`(13382)。
+
+**顶栏时间筛选的落点（清晰截图新增）**：截图顶栏有两个 `2月前 ▾` / `4天前 ▾` 下拉，语义是提交历史的 `since` / `until` 范围。复用既有 `FilterSelect`(13300)、`sinceThreshold`(14518)、21 门 `filter.date`(434/864/…) 与 `HistoryList` 的 `onScopeChange`/`onPathFilter`(17355–17374)；旧布局里这些控件在 `HistoryList.filterBar`(14814)，本次把**时间范围**两个下拉搬到 `UgitTopbar`（文本/哈希/路径过滤仍留在「历史」Tab 的过滤条，不挤进窄顶栏）。`UgitTopbar` 通过 props 接收 Panel 既有的 `scope`/`pathFilter`/`onScopeChange` 等回调，不新增数据请求、不改 `HistoryList` 的过滤逻辑。若顶栏宽度放不下，`iconRail` 与时间下拉按 `railCapacityOf`(17888) 的溢出规则收进「⋯ 更多」，不横向溢出。
 
 **为什么**（req/3、a/2、req/4）：旧顶栏的「分支或标签」「文本或哈希」两个大搜索框正是用户点名「被重点突出」的元素；把它们收进分支下拉与「历史」Tab 的过滤条，主视野才能让给变更/diff。
 
@@ -458,6 +461,7 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 | `RailSettingsCard` / `RailSettings` / `apply` | 12075 / 12653 / 20627 | 存在 |
 | `historyPane` / `diffPaneOf`→`diffPane` / `fillDiff` / `splitTabs` / `tabPane` / `renderRail` / `railCapacityOf` / `openPickerAt` / `foldTree` | 17338 / 17425 / 17960 / 17961 / 17997 / 17896 / 17888 / 16324 / 15492 | 存在 |
 | `dig-shell` / `dig-body-columns` / `dig-pane-tree` / `dig-pane-changes` / `dig-pane-main` / `dig-topbar` | 18457 / 18621 / 18625 / 18628 / 18627 / 18500 | 存在 |
+| `ChangeRow` 状态图标 / `SplitColumns` 同步滚动 / `FilterSelect` / `sinceThreshold` / `sortKey` 菜单 / `filter.date` | 13718+13741 / 11459+11470 / 13300 / 14518 / 15687+17550–17553 / 434+864+…21 门 | 存在；§1.3 逐元素对照据此判定「复用既有」 |
 | `pathFilter` 归属 | 14574 / 14789 / 15282 / 17360（**HistoryList**，非 `ChangesPanel`） | D4 已据此修正 |
 | `composer` 归属 | 14090–14160（`ChangesPanel` 内部硬编码） | D6 已据此修正 |
 | `ChangesPanel` props | 13790（`groupBy`/`foldedDirs`）、13862/13945（`onDiff`）、14153（`hideHeader`） | 无目录过滤 prop |
