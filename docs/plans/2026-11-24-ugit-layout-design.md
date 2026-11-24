@@ -172,7 +172,7 @@
 |---|---|---|
 | `dig-root` / `dig-topbar` / `dig-shell` / `dig-empty` | `ssr-check.mjs:86` 的 4 个 needle | 已确证；`dig-shell` 在 18457 |
 | `dig-body dig-body-columns`（宽容器） | `layout-probe.mjs:119` `CHROMES`、`conversation-probe.mjs:404/411`（硬编码 `chrome==='columns'`） | 已确证 |
-| `dig-body-stack` / `dig-body-compact`（窄容器 `<400`） | `layout-probe.mjs`、`panes-probe.mjs:147`、`dock-probe.mjs:147` 的 `/dig-body-(columns\|stack\|compact)/` | 已确证；**窄容器仍按宽度选 stack/compact，chrome 判定 15352–15354 保留**，不变量 7 不破 |
+| `dig-body-stack` / `dig-body-compact`（窄容器 `<400`） | `layout-probe.mjs`、`panes-probe.mjs:147`、`dock-probe.mjs:147` 的 `/dig-body-(columns\|stack\|compact)/` | 已确证；****chrome 判定仍保留（决定 CSS 方向），但三套 chrome 全部渲染同一个 UgitBody**——旧 stack/compact 里常驻分支树+图谱的 JSX 已删除（真机验证发现窄右栏仍是旧三栏、违背 req/3，故改为统一走 ugit 分区语义），不变量 7 的宽度测量仍不破 |
 | `.dig-pane-tree` / `.dig-pane-changes` / `.dig-pane-main` / `[data-pane]` | `panes-probe.mjs:156–164`、`selection-probe.mjs`、`smoke.mjs:1849–1860` 的 border-l2 选择器 | 已确证（CSS 18625–18629） |
 | `dig-root-narrow` 标记 | `smoke.mjs:1706–1708`、`panes-probe.mjs:266` | 已确证 |
 | `RAIL_VIEW_IDS` / `RAIL_SPECS` 五个视图动作 | `smoke.mjs:935`、`dock-probe.mjs` 的 `[data-action]` | 已确证（9886）；**动作条不删**，`renderRail` 改为收进顶栏/图标 rail |
@@ -228,7 +228,7 @@
 
 **状态机收敛（明确表态，原稿含糊）**：
 - `view`(15184，取值 `'history'|'detail'|'worktrees'`) **保留**：`view==='detail'` 归入「历史」Tab 的提交详情，`view==='worktrees'` 归入「工作区」Tab；`selectCommit`(16276) 与 `onBack`(17341/18014) 的回退目标改为「回到当前 activeTab」，不改其写入点。
-- `splitTab`(15213) **不再承担主视图切换**，但**保留 state 与 `tabPane()` 包装**：它只在窄容器 stack/compact 下决定 history/diff 哪个可见（`diffActive` 17996），这是既有滚动位置保持机制。`useEffect`(15214–15216) 的 patch 清空回退逻辑不动。
+- `splitTab`(15213) **保留为 state 但不再驱动 body**：旧 compact/stack 的 `splitTabs`/`tabPane`/`diffActive` JSX 已整体删除（见 §6 的「所有 chrome 统一 UgitBody」）。`useEffect`(15214–15216) 的 patch 清空回退逻辑不动。
 - `treeOpen`(15190) **保留**：它仍是 `dirTree` 列的折叠态，写入 `PANES_KEY.treeOpen`；与 `hidden[]` 的关系 = `hidden` 优先（隐藏即不渲染），`treeOpen` 只管「可见时的折叠」。
 
 **被否决的备选**：*用 `view` 直接当 Tab（不新增 activeTab）* —— 否决：`view` 还承载 detail/worktrees 两个子状态，语义会重叠；且 `view` 无持久化，a/3 要求默认 Tab 记忆。
@@ -389,6 +389,11 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 > **落点修正（二次确证，命令见附录 A）**：原稿写「pane sizing core 之后、rail config core 之前」在行号上不成立（rail config core 9921 早于 pane core 10155）；第一次修订写「rail config core 结束(9963) 之后、`migrateRailConfig`(10097) 之前」**同样不成立** —— `sed -n '9963,10100p' src/client.js` 显示该区间实际有 `readCommitSettings`(9968)、`readDateFormat`、`railFormReady`、`conversationImmersiveEnabled`、`readRailConfig`(10007)、`writeRailConfig`(10019)、`writeRailFields`(10063)、`writeRailField`(10089) 共 8 个函数，且 `tests/smoke.mjs:1268` 的 `writeRailFields → /* One-shot move…*/` 切片与 `:1530` 的 `migrateRailConfig → subscribeRailConfig` 切片都横跨此段，插进去会被切片吞掉或破坏断言。
 > **最终安全落点：`writePanes`(10379) 结束之后、`/* ---- dock action core`(10384) 开始之前**。该区间只有空行与一节注释；`grep -oE "client\.indexOf\('[^']+'\)" tests/smoke.mjs | sort -u` 确证它不在任何切片内部，`/* ---- end pane sizing core ---- */`(10366) 与 `/* ---- dock action core`(10384) 两个边界均不受影响。
 
+
+### 真机验证后的实现修正（v0.37.0）：所有 chrome 统一走 UgitBody
+
+隔离实例 3099 真机复验（发布版 CLI + 干净 profile + 演示仓库）发现：原稿只在 `columns`（宽容器）分支用 `UgitBody`，`compact`/`stack`（窄右栏）仍保留旧三栏 JSX（常驻分支树 + 提交图谱），导致右侧栏截图仍是「分支树｜提交图谱｜变更」——正是 req/3 要消除的形态，属于「能跑通但语义不对」。故改为：**三个数据态分支之后只留一个 `else`，统一 `E(UgitBody, {…})`**，`chrome` 仅决定 CSS 方向（columns=横向三列、stack/compact=纵向堆叠）。旧 `splitTabs`/`tabPane`/`diffActive`/`diffPane`/`diffGutter`/`noDiff` 全部删除，`fillDiff = diffPaneOf(true)` 保留作主角列。`tests/smoke.mjs` 里针对旧 compact/stack 的 5 条断言诚实改为「所有 chrome 共用 UgitBody / 分支树默认不出现」的等价断言（79/0 通过）。真机证据：`.dig-root:visible`=1、`UGIT_TABS`=3、`.dig-dirtree`=1、`.dig-tree`(分支树)=0、`.dig-split-tabs`=0、`PAGEERRORS`=[]；点变更文件后 `.dig-diff-pane`=1、`.dig-diff-pane-fill`=1、`localStorage` 写入 `{"split":true,"wrap":false}`（纯新增文件按既有「单边强制单列」规则渲染 unified，属 `LineDiff` 既有正确行为，非缺陷）。
+
 ## 6. 错误处理、边界与安全（回答第 16–21 条）
 
 ### 6.1 错误处理
@@ -432,7 +437,7 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 | 目录树点目录只能切「按目录分组」，不能真·过滤文件列表（D4 已表态不做） | 与「目录树即过滤器」的直觉有落差 | 若后续要做，给 `ChangesPanel` 加 `dirFilter` prop 并补 `selection-probe.mjs` 断言；本次不做 |
 | `extraRatios` 的简化 clamp 没有 pane core 那套两级 ceiling | 极端窄容器下附加列可能挤占 `changes`/`diff` | 已限定 min/max 且窄容器自动收起附加列；若真机复现再移植 clamp，不在本次范围 |
 | `AGENTS.md` 不变量 7 改写后，历史 CHANGELOG 条目里「columns/stack/compact」的描述不再对应新代码 | 仅文档表述 | 不回改历史条目（变更记录纪律：历史条目不改），靠不变量 7 的新描述为准 |
-| **真机 layout-probe / 六个探针本次未跑通**：隔离实例 3099 起来后页面停在「重新连接中…/连接中断，正在重试」、右侧栏无 guide entries、会话无法真正开始；`scripts/layout-probe.mjs` 的 `enterSession()` 引导序列与发布版 CLI 的「选择工作区」初始态不匹配 | 有数据的 `UgitBody` chrome（目录树/变更/diff）**未经真机渲染验证**。但 `node --check`、`tests/smoke.mjs`(77/0)、`ssr-check.mjs`(四座位全 OK)、`npm test`(仅既有 `api.test.mjs:578 pull defaults` 基线失败) 全绿，Playwright 页面 `PAGEERRORS: []` | 本次如实记录、不假装通过。后续需：①用完整 profile 正式安装形态（而非手工解包 tarball）起隔离实例；②按 `selection-probe.mjs` 的 `/api/workspace/create` gateway 绑定更新 `layout-probe.mjs` 的 `enterSession()`；③再跑 §7.1 全套探针。隔离实例已按 AGENTS.md 纪律收尾杀掉，3099 空闲、3080 从未触碰 |
+| **六个真机探针 / 重拍 6 张图本次仍未逐项跑通** | 隔离实例 3099 的发布版 CLI 已能进会话并打开 Git 面板(点 guide-entry 内部 `<button class="FlLRca_cardMain">`),真机 DOM 与截图已验证 ugit 分区、默认并排、零 pageerror;但 `layout-probe.mjs` 等六个脚本的 `enterSession()` 仍按旧引导序列(继续/关闭/稍后配置/新建会话 + Lexical `.click()`)编写,与发布版 CLI 的「选择工作区」初始态不匹配,未逐项跑通 | 本次如实记录,不假装通过。后续需按 `selection-probe.mjs` 的 `/api/workspace/create` gateway 绑定与「点 guide-entry 内部 button」更新 `enterSession()`/`openPanel()`,再跑全套探针并重拍 6 张图。隔离实例已按 AGENTS.md 纪律收尾杀掉,3099 空闲、3080 从未触碰 | 有数据的 `UgitBody` chrome（目录树/变更/diff）**未经真机渲染验证**。但 `node --check`、`tests/smoke.mjs`(77/0)、`ssr-check.mjs`(四座位全 OK)、`npm test`(仅既有 `api.test.mjs:578 pull defaults` 基线失败) 全绿，Playwright 页面 `PAGEERRORS: []` | 本次如实记录、不假装通过。后续需：①用完整 profile 正式安装形态（而非手工解包 tarball）起隔离实例；②按 `selection-probe.mjs` 的 `/api/workspace/create` gateway 绑定更新 `layout-probe.mjs` 的 `enterSession()`；③再跑 §7.1 全套探针。隔离实例已按 AGENTS.md 纪律收尾杀掉，3099 空闲、3080 从未触碰 |
 
 ## 7. 测试策略与实施顺序
 

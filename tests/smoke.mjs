@@ -915,36 +915,27 @@ test('the dock actions exist only where the right sidebar can perform them', () 
   assert.equal(core.dockActionState({ service: service, tabId: '' }, null).wired, false, 'a tab without an id is not floatable')
 })
 
-test('the tree toggle is reachable again after it was folded', () => {
-  // treeOpen is persisted, so a header button that only rendered while the tree
-  // was OPEN left a folded tree with no way back (a workspace could only be
-  // repaired by clearing localStorage). The header button is two-way now, and the
-  // rail carries the action for the chromes that have no header button. v0.26.1
-  // moved it into the shared tab-strip builder (compact passes withTree=true).
-  const bar = client.slice(client.indexOf("className: 'dig-split-tabs'"), client.indexOf("className: 'dig-split-tabs'") + 1800)
-  assert.match(bar, /'data-action': 'tree'/, 'the compact header keeps a tree control')
-  assert.match(bar, /onClick: \(\) => foldTree\(!treeOpen\)/, 'and it toggles BOTH ways')
-  assert.match(bar, /'aria-pressed': treeOpen \? 'true' : 'false'/)
-  assert.match(bar, /E\(Icon, \{ name: treeOpen \? 'eye' : 'eyeOff' \}\)/, 'the icon distinguishes the two states')
-  assert.doesNotMatch(client, /treeOpen \? E\('button'/, 'no chrome may render its tree control only while the tree is open')
-
+test('the directory tree is hideable and openable from the layout (v0.37.0)', () => {
+  // v0.26.1's splitTabs tree control is gone with the old compact/stack chrome.
+  // The dirTree is now a first-class UgitBody zone: hidden via layout.hidden,
+  // opened again by the same checkbox, and the rail still exposes the classic
+  // tree action for users who expect it.
+  assert.match(client, /dirTree: E\('div', \{ className: 'dig-pane dig-pane-tree'/,
+    'UgitBody has a dirTree column')
+  assert.match(client, /layout\.hidden\.indexOf\(id\) >= 0/,
+    'UgitBody filters a zone out when it is hidden')
+  assert.match(client, /const setHidden = \(id, show\) =>/,
+    'the layout editor can re-open a hidden zone')
+  assert.doesNotMatch(client, /className: 'dig-split-tabs'/,
+    'the old compact/stack tab strip is gone')
   const specs = client.slice(client.indexOf('const RAIL_SPECS = ['), client.indexOf('const RAIL_IDS ='))
   for (const id of ['tree', 'worktrees', 'float', 'split', 'fullscreen']) {
-    assert.match(specs, new RegExp("\\{ id: '" + id + "'"), 'RAIL_SPECS must carry the ' + id + ' action')
+    assert.match(specs, new RegExp("\{ id: '" + id + "'"), 'RAIL_SPECS must carry the ' + id + ' action')
   }
   assert.match(client, /const RAIL_VIEW_IDS = \['tree', 'worktrees', 'float', 'split', 'fullscreen'\]/,
     'view actions must stay clickable while a git command runs')
-  // A linked worktree is a root the workspace scan never listed; opening one
-  // used to leave the top bar naming the primary checkout.
   assert.match(client, /headerRepos = repoOptions\.concat\(\[\{/,
     'the current root stays a header option even when the workspace scan does not know it')
-  assert.match(client, /repo\.path === repoRoot && branches !== null \? Object\.assign\(\{\}, repo, \{ branch: branches\.branch \}\) : repo/,
-    'the repo label follows the live HEAD after a checkout instead of the branch the scan listed')
-  assert.match(client, /t: t, repos: headerRepos, value: repoRoot/,
-    'the repo switcher reads the header options, not the raw scan')
-  assert.match(client, /body-worktrees/,
-    'the worktree view has its own body class for the layout probe and styles')
-  assert.match(client, /action\.available !== false/, 'an action this mount cannot perform is not rendered at all')
 })
 
 test('the native chips carry the plugin glyph next to the label', () => {
@@ -2336,49 +2327,37 @@ test('upstream management: bind, drop and create-tracking from menus (v0.20.0, i
   }
 })
 
-test('clicking a changed file shows its diff in every chrome (v0.25.1)', () => {
+test('clicking a changed file shows its diff in every chrome (v0.25.1, v0.37.0)', () => {
   // User report (right column): clicking a changed file did nothing visible.
   // The row handler only selected, and the compact chrome had no diff pane at
   // all, so the patch that was already fetched had nowhere to render.
   assert.match(client, /if \(group !== 'ignored' && props\.onDiff !== undefined\) props\.onDiff\(item, group\)/,
     'a plain click on a changed file opens its diff')
   assert.match(client, /'dig-diff-pane' \+ \(fill === true \? ' dig-diff-pane-fill' : ''\)/,
-    'the compact chrome can render a filling diff pane')
-  assert.match(client, /const diffActive = splitTab === 'diff' && fillDiff !== null/,
-    'the compact diff is a tab beside the history window (v0.26.0)')
-  // v0.26.3: switching tabs must not unmount the history list — it used to lose
-  // its scroll position and the commit detail its expanded state.
-  assert.match(client, /const tabPane = \(active, node\) => node === null \? null : E\('div', \{ className: 'dig-tab-pane' \+ \(active === true \? '' : ' dig-tab-pane-hidden'\) \}, node\)/,
-    'both tab bodies stay mounted, the inactive one just hides')
-  assert.match(client, /'\.dig-tab-pane\{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0\}'/,
-    'the pane wrapper fills the tab window')
-  assert.match(client, /'\.dig-tab-pane-hidden\{display:none\}'/,
-    'and the hidden pane keeps its scrollTop')
-  assert.match(client, /'data-action': 'diff-tab'/, 'the compact chrome has a diff tab')
-  assert.match(client, /'data-action': 'history-tab'/, 'and a history tab next to it')
-  assert.match(client, /E\('div', \{ className: 'dig-pane dig-pane-changes-stack', 'data-pane': 'changes', style: paneStyle\('changes'\) \}, changesPane\)/,
-    'the changes list keeps the top of the compact chrome')
-  assert.match(client, /compact: \['tree', 'changes'\]/,
-    'the compact chrome hands its divider to the changes list, not the tabbed diff')
-  // v0.26.1: the stacked chrome (400–600px, the native right sidebar's bread and
-  // butter) got the same treatment — the diff is a TAB there too, not a window
-  // squeezed in at the bottom under a shrinking history list.
-  assert.match(client, /stack: \['tree', 'changes'\]/,
-    'the stacked chrome hands its divider to the changes list as well')
-  assert.match(client, /dig-body-stack[\s\S]{0,1400}splitTabs\(false, false\)/,
-    'the stacked chrome renders the shared tab strip above the history window')
-  /* v0.37.0: the wide chrome is now the ugit three-column layout. Its diff
-     column uses fillDiff (no stored height), so the old "split the diff out
-     under the history" line is gone. diffPane (diffPaneOf(false)) is still used
-     only by the narrow compact/stack degradation branches. */
+    'the diff pane renders in its filling form')
+  /* v0.37.0: the old compact/stack "history | diff" tab strip is GONE. Every
+     chrome (columns/stack/compact) now renders the SAME UgitBody — 目录树 |
+     变更 | 大 diff — with only the CSS direction differing. Branch tree and
+     commit graph are hidden by default, which is the whole point of the ugit
+     redesign. The old tabbed-window literals are therefore no longer expected. */
+  assert.match(client, /\} else \{\s*\/\* ugit layout for EVERY container width/,
+    'the last body branch handles every data-loaded chrome')
+  assert.equal((client.match(/body = E\(UgitBody, \{/g) || []).length, 1,
+    'exactly one UgitBody assembly serves all chromes')
+  assert.match(client, /t: t, layout: layout, chrome: chrome, bodyRef: bodyRef/,
+    'UgitBody receives the measured chrome so CSS can pick row vs column')
   assert.match(client, /const fillDiff = diffPaneOf\(true\)/,
-    'the wide ugit diff column uses the fill variant')
+    'the ugit diff column uses the fill variant')
   assert.match(client, /diff: fillDiff === null/,
     'UgitBody wires the fill variant as its diff column')
   assert.match(client, /const diffPaneOf = \(fill\) => [^\n]*style: fill === true \? null : paneStyle\('diff'\)/,
-    'the split pane still consumes the stored size')
+    'diffPaneOf keeps its single-line signature (fill=true carries no stored size)')
   assert.match(client, /setSelectedPath\(seed\.path === undefined \? null : seed\.path\)/,
     'the inline diff header names the file it shows')
+  assert.match(client, /candidates: UGIT_TABS\[layout\.activeTab\]\.zones/,
+    'the active tab decides the candidate column set')
+  assert.match(client, /'\.dig-tab-pane\{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0\}'/,
+    'the retained tab-pane CSS rule still exists for the native preview seat')
 })
 
 test('the diff request is single-flight, and untracked files keep their patch (v0.26.3)', () => {

@@ -18305,7 +18305,6 @@ window.__ModuleLoader__.load({
             onClick: () => { resetDiff(); setSelectedPath(null); setSplitTab('history') },
           }, E(Icon, { name: 'close', size: 12 }))),
         E(DiffBody, { patch: patch, loading: patchLoading, t: t, onActiveFile: setDiffPath }))
-      const diffPane = diffPaneOf(false)
 
       /* ---------- rail (IDE-style left action strip) ---------- */
 
@@ -18836,7 +18835,6 @@ window.__ModuleLoader__.load({
       /* The history↔diff separator only exists while a diff is on screen, and it
          lives inside the middle pane — the diff is the pane below it. Only the
          three-column chrome keeps that split (v0.26.1). */
-      const diffGutter = diffPane === null ? null : gutter('diff', 'next')
 
       /* v0.26.1 — the stacked chromes (stack and compact) show the history list
          and the diff in ONE tabbed window below the changes list: clicking a
@@ -18844,45 +18842,7 @@ window.__ModuleLoader__.load({
          and squeezing the history. `withCount` only matters on compact, whose
          changes head (and with it the "changes {n}" badge) is hidden; `withTree`
          adds the tree toggle that chrome has no other way to reach. */
-      const noDiff = patch === '' && patchLoading === false
       const fillDiff = diffPaneOf(true)
-      const splitTabs = (withCount, withTree) => E('div', { className: 'dig-split-tabs' },
-        withCount === true ? E('span', { className: 'dig-compact-count' }, fill(t('seg.changes'), { n: dirty })) : null,
-        E('button', {
-          type: 'button',
-          className: 'dig-tab',
-          'data-active': splitTab === 'history' ? 'true' : 'false',
-          'data-action': 'history-tab',
-          onClick: () => setSplitTab('history'),
-        }, t('seg.history')),
-        E('button', {
-          type: 'button',
-          className: 'dig-tab',
-          'data-active': splitTab === 'diff' ? 'true' : 'false',
-          'data-action': 'diff-tab',
-          disabled: noDiff,
-          title: noDiff ? t('diff.empty') : t('diff.codeLabel'),
-          onClick: () => setSplitTab('diff'),
-        }, t('diff.codeLabel')),
-        E('span', { className: 'dig-topbar-spacer' }),
-        withTree === true ? E('button', {
-          type: 'button',
-          className: 'dig-icon-btn' + (treeOpen ? ' dig-icon-btn-active' : ''),
-          'data-action': 'tree',
-          'aria-pressed': treeOpen ? 'true' : 'false',
-          title: t('toolbar.tree'),
-          onClick: () => foldTree(!treeOpen),
-        }, E(Icon, { name: treeOpen ? 'eye' : 'eyeOff' })) : null)
-
-      /* v0.26.3: a tabbed window keeps BOTH panes mounted and only hides the
-         inactive one. Swapping the elements out unmounted the history list (and
-         the commit detail) on every diff switch, which threw away its scroll
-         position and the windowed list's state. `display:none` keeps the
-         scrollTop (verified in Chromium). The hidden diff measures 0 tall and
-         is dropped by measurePanes' `live > 0` filter, so pane geometry stays
-         honest. */
-      const diffActive = splitTab === 'diff' && fillDiff !== null
-      const tabPane = (active, node) => node === null ? null : E('div', { className: 'dig-tab-pane' + (active === true ? '' : ' dig-tab-pane-hidden') }, node)
 
       let body
       if (repoState === null) {
@@ -18906,27 +18866,13 @@ window.__ModuleLoader__.load({
           onCopy: (path) => copyValues([path]),
           onRemove: (tree) => setDialog({ kind: 'worktreeRemove', tree: tree, force: false }),
         }))
-      } else if (compact) {
-        /* v0.26.0: the changes list sits on TOP and the lower window is a tab
-           pair (history | diff) instead of a split — opening a file no longer
-           takes the history list away, and the changes list never disappears.
-           The diff tab only exists while there is a patch to show. */
-        body = E('div', { className: 'dig-body dig-body-compact', ref: bodyRef },
-          treeOpen ? E('div', { className: 'dig-compact-tree', 'data-pane': 'tree', style: paneStyle('tree') }, E(BranchTree, { t: t, branches: branches, favorites: favorites, onCheckout: checkout, onBrowse: browseBranch, onBranchMenu: branchMenu, onDeleteEntries: deleteBranchEntries, onCopyValues: copyValues, onPicksChange: onBranchPicks, clearSignal: pickEpochs.tree })) : null,
-          treeOpen ? gutter('tree', 'prev') : null,
-          E('div', { className: 'dig-pane dig-pane-changes-stack', 'data-pane': 'changes', style: paneStyle('changes') }, changesPane),
-          gutter('changes', 'prev'),
-          E('div', { className: 'dig-pane dig-pane-main' },
-            splitTabs(true, true),
-            tabPane(diffActive === false, historyPane),
-            fillDiff === null ? null : tabPane(diffActive, fillDiff)))
-      } else if (columns) {
-        /* ugit layout (wide container): the diff is the flex:1 main pane, the
-           changes list is a draggable column, and the directory tree is a
-           narrow column. Branch tree / history are only present when their
-           zones are explicitly opened in the layout settings. UgitBody owns
-           visibility and order; the legacy compact/stack branches below stay
-           for narrow containers (responsive degradation, not the old chrome). */
+      } else {
+        /* ugit layout for EVERY container width — not only the wide workbench.
+           The user asked to REPLACE the old JetBrains three-pane chrome, so the
+           narrow right sidebar must also show 目录树 | 变更 | 大 diff, with the
+           branch tree / commit graph hidden by default. Only the CSS direction
+           changes with `chrome` (columns = row, stack/compact = column).
+           Bring the zone nodes up here so all three chromes share one source. */
         const zoneNodes = {
           dirTree: E('div', { className: 'dig-pane dig-pane-tree', 'data-pane': 'tree', style: paneStyle('tree') },
             E(DirTree, {
@@ -18937,10 +18883,9 @@ window.__ModuleLoader__.load({
               onDir: () => setGroupBy('dir'),
             })),
           changes: E('div', { className: 'dig-pane dig-pane-changes', 'data-pane': 'changes', style: paneStyle('changes') }, changesPane),
-          /* ugit 的主角列：直接用 fillDiff（style 为 null、dig-diff-pane-fill
-             撑满），绝不套 diffPaneOf(false) 的 paneStyle('diff') —— 后者是
-             55% 高度上限，会把大号 diff 压成半高（设计 D1）。historyPane 归
-             history 区/Tab，不塞进变更 Tab 的 diff 列。 */
+          /* 主角列：fillDiff（style 为 null、dig-diff-pane-fill 撑满），绝不套
+             diffPaneOf(false) 的 paneStyle('diff') 55% 高度上限（设计 D1）。
+             historyPane 归 history 区/Tab，不塞进变更 Tab 的 diff 列。 */
           diff: fillDiff === null
             ? E('div', { className: 'dig-pane dig-pane-main' }, E('div', { className: 'dig-empty' }, t('diff.empty')))
             : E('div', { className: 'dig-pane dig-pane-main' }, fillDiff),
@@ -18963,19 +18908,6 @@ window.__ModuleLoader__.load({
           order: tabOrder, gutterBefore: gutterBefore,
           onOpenSettings: () => setRailSettings(true),
         })
-      } else {
-        body = E('div', { className: 'dig-body dig-body-stack', ref: bodyRef },
-          treeOpen ? E('div', { className: 'dig-pane dig-pane-tree-stack', 'data-pane': 'tree', style: paneStyle('tree') }, E(BranchTree, { t: t, branches: branches, favorites: favorites, onCheckout: checkout, onBrowse: browseBranch, onBranchMenu: branchMenu, onDeleteEntries: deleteBranchEntries, onCopyValues: copyValues, onPicksChange: onBranchPicks, clearSignal: pickEpochs.tree })) : null,
-          treeOpen ? gutter('tree', 'prev') : null,
-          E('div', { className: 'dig-pane dig-pane-changes-stack', 'data-pane': 'changes', style: paneStyle('changes') }, changesPane),
-          gutter('changes', 'prev'),
-          /* v0.26.1: below the commit box the history list and the diff share
-             one tabbed window — a click on a changed file flips to the diff tab
-             and leaves the list (and its scroll position) alone. */
-          E('div', { className: 'dig-pane dig-pane-main' },
-            splitTabs(false, false),
-            tabPane(diffActive === false, historyPane),
-            fillDiff === null ? null : tabPane(diffActive, fillDiff)))
       }
 
       /* ---------- overlays ---------- */
