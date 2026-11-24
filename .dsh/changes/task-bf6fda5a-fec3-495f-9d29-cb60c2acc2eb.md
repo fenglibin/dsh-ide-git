@@ -1,2 +1,9 @@
 - graded l1 by fallback (202 chars vs floor 200; grading response named no grade: )
 - [revision 14] level raised: l1 -> l2 (0 file(s) touched, 9 todo(s))
+- [revision 18] 按 ugit 参考截图完成插件布局重构（提交序列 3885732 / 351cde5 / 3681856 / 32abc75 / 2f79bc6 / 936ed6f）。
+
+【实现】①配置层：新增 LAYOUT_KEY='dsh-ide-git.layout.v2'、UGIT_ZONE_SPECS(5 列分区)/UGIT_AFFIX_SPECS/UGIT_TABS、normalizeLayout/readLayout/writeLayout（try/catch、丢弃未知重复 id、默认值回退、写路径不回退退役键），落点 writePanes(10379) 后、dock action core(10384) 前（经 smoke 全部切片标记确证）。②21 门词典新增 24 个 layout.* 键，逐门键集一致。③readLineDiffPrefs 默认 split:false→true（老用户 stored 值优先）。④组件层：DirTree（复用 buildDirForest/dirName/TREE_KEY）、UgitTopbar（单行顶栏+三 Tab，不承载时间下拉）、UgitIconRail、UgitBody（按 layout 显隐/顺序渲染，diff 列复用 fillDiff 不调 paneStyle('diff')）、UgitLayoutSettings（逐区双向开关/上移下移/默认 Tab/提交框落点/恢复默认）。⑤接线：Panel 用 useState(readLayout) 播种、onLayoutChange 写回；宽容器 columns 分支改用 UgitBody（窄容器 compact/stack 保留为响应式降级）；齿轮 RailSettings 挂载 layoutEditor；插件页 RailSettingsCard 零改动（守住 settings-card-probe）。⑥ChangesPanel 新增 commitBoxDocked prop（CSS class 切换同一份有状态提交框，state 不提升、composer JSX 一字未动，避开 smoke 1591/1869/2240 三条断言）。⑦CSS 新增 ugit 规则，保留 11 个 border-l2 选择器与全部兼容类名。⑧文档：CHANGELOG Unreleased、AGENTS.md 不变量 7 改写为 ugit 分区模型、两份 README 效果段、screenshots.mjs 第 2/3/5 张改先切 Tab 路径。
+
+【验证】node --check（client.js + screenshots.mjs）通过；tests/smoke.mjs 77 通过 0 失败（含新增 LAYOUT_KEY 纯函数/双向翻转/split 默认值/接线 4 组断言）；scripts/ssr-check.mjs 四座位全 OK；21 门词典键集断言通过；npm test 仅 api.test.mjs:578「pull defaults to merge」一条改动前就存在的基线失败（经 git stash 还原 HEAD 复跑确认）。真机 layout-probe 未跑通（隔离实例发布版 CLI 页面停在「重新连接中…」、会话无法开始，探针 enterSession 与初始态不匹配），已如实记入完整方案 §6.5 与 CHANGELOG，Playwright PAGEERRORS: []。隔离实例 3099 已按 AGENTS.md 纪律收尾杀掉、3080 从未触碰。
+
+【设计同步】完整方案 docs/plans/2026-11-24-ugit-layout-design.md 与 openspec/changes/refactor-ugit-layout/design.md 同步了三处实现层取舍：D1 的 diff 用 fillDiff 不调 paneStyle、D3 顶栏时间下拉为能力缺口不做、D6 提交框用 commitBoxDocked class 而非抽出 CommitBox 组件（避免破坏 smoke 三条断言）。
