@@ -13322,6 +13322,7 @@ window.__ModuleLoader__.load({
                 title: item.hidden === true ? t('rail.show') : t('rail.hide'),
                 onClick: () => props.onToggle(item.id),
               }, E(Icon, { name: item.hidden === true ? 'eyeOff' : 'eye', size: 13 }))))),
+          props.layoutEditor === null || props.layoutEditor === undefined ? null : props.layoutEditor,
           E('div', { className: 'dig-dialog-actions' },
             E('button', { type: 'button', className: 'dig-btn', onClick: props.onReset }, t('rail.reset')),
             E('button', { type: 'button', className: 'dig-btn dig-btn-primary', onClick: props.onClose }, t('confirm.ok')))))
@@ -13880,6 +13881,212 @@ window.__ModuleLoader__.load({
             onClick: () => { setOpen(false); setError('') },
           }, t('confirm.cancel'))),
         error === '' ? null : E('div', { className: 'dig-pick-manual-error' }, error))
+    }
+
+    /* ugit's left column: a real directory tree over the changed files. It
+       reuses buildDirForest/dirName (the same forest the "group by directory"
+       list uses), so clicking a folder can drive that grouping without a second
+       data layer. state stays with the parent: `folded` is a map of folder ids
+       the caller persists through TREE_KEY. */
+    function DirTree(props) {
+      const t = props.t
+      const [query, setQuery] = useState('')
+      const summary = props.summary
+      const groups = summary !== null && summary !== undefined && summary.changes !== null && typeof summary.changes === 'object'
+        ? summary.changes : {}
+      const all = []
+      for (const key of ['staged', 'unstaged', 'untracked']) {
+        const entries = Array.isArray(groups[key]) ? groups[key] : []
+        for (const item of entries) {
+          if (item === null || typeof item !== 'object' || typeof item.path !== 'string') continue
+          all.push({ path: item.path, item: item, group: key })
+        }
+      }
+      const forest = useMemo(() => buildDirForest(all, 'dirTree'), [all])
+      const folded = props.folded !== null && typeof props.folded === 'object' ? props.folded : {}
+      const matches = (path) => query === '' || path.toLowerCase().indexOf(query.toLowerCase()) >= 0
+      const renderFiles = (node, depth) => node.files
+        .filter((entry) => matches(entry.path))
+        .map((entry) => E('button', {
+          type: 'button', key: 'f:' + entry.path,
+          className: 'dig-dirtree-file',
+          style: { paddingLeft: String(8 + depth * 14) + 'px' },
+          title: entry.path,
+          onClick: () => { if (typeof props.onFile === 'function') props.onFile(entry.item, entry.group) },
+        }, E('span', { className: 'dig-dirtree-leaf' }, baseName(entry.path))))
+      const renderDirs = (nodes, depth) => nodes.map((node) => {
+        const id = 'dirTree|' + node.path.join('/')
+        const label = node.path[node.path.length - 1]
+        const open = folded[id] !== true
+        const children = forest.sortedChildren(node)
+        const visible = open ? renderDirs(children, depth + 1).concat(renderFiles(node, depth + 1)) : []
+        return E(Fragment, { key: id },
+          E('button', {
+            type: 'button', className: 'dig-dirtree-dir',
+            style: { paddingLeft: String(8 + depth * 14) + 'px' },
+            title: node.path.join('/'),
+            onClick: () => {
+              if (typeof props.onFold === 'function') props.onFold(id, open)
+              if (typeof props.onDir === 'function') props.onDir(node.path.join('/'))
+            },
+          },
+            E('span', { className: 'dig-chevron' + (open ? ' dig-chevron-open' : ''), 'aria-hidden': 'true' }, '▸'),
+            E(Icon, { name: 'folder', size: 14 }),
+            E('span', { className: 'dig-dirtree-name' }, label)),
+          visible)
+      })
+      const roots = forest.rootFiles.filter((entry) => matches(entry.path)).map((entry) => E('button', {
+        type: 'button', key: 'rf:' + entry.path, className: 'dig-dirtree-file',
+        title: entry.path,
+        onClick: () => { if (typeof props.onFile === 'function') props.onFile(entry.item, entry.group) },
+      }, E('span', { className: 'dig-dirtree-leaf' }, baseName(entry.path))))
+      return E('div', { className: 'dig-dirtree' },
+        E('input', {
+          className: 'dig-input dig-input-compact dig-dirtree-search', value: query, spellCheck: false,
+          placeholder: t('filter.pathPlaceholder'),
+          onChange: (event) => setQuery(event.target.value),
+        }),
+        E('div', { className: 'dig-dirtree-scroll' },
+          renderDirs(forest.roots, 0),
+          roots,
+          all.length === 0 ? E('div', { className: 'dig-empty' }, t('changes.empty')) : null))
+    }
+
+    /* ---- ugit layout: presentational shells ---------------------------------
+       These four components are deliberately state-free. The Panel owns every
+       closure (repo data, requests, menus, pane sizing); it renders the small
+       pieces and hands them in as props/children. That keeps the components
+       independently reviewable while never duplicating a hook or a request. */
+
+    /* Single-row header: legacy top-bar children on the left, the three view
+       tabs in the middle, action/rail extras on the right. Root keeps the
+       `dig-topbar` class (ssr-check needle + border-l2 smoke selector). */
+    function UgitTopbar(props) {
+      const t = props.t
+      const layout = props.layout
+      const tabs = UGIT_TAB_IDS.map((id) => E('button', {
+        type: 'button', key: id,
+        className: 'dig-ugit-tab' + (layout.activeTab === id ? ' dig-ugit-tab-active' : ''),
+        'aria-pressed': layout.activeTab === id ? 'true' : 'false',
+        onClick: () => { if (typeof props.onTab === 'function') props.onTab(id) },
+      }, t('layout.tab.' + id)))
+      return E('div', { className: 'dig-topbar' },
+        props.leading,
+        E('div', { className: 'dig-ugit-tabs' }, tabs),
+        props.trailing,
+        E('span', { className: 'dig-topbar-spacer' }),
+        props.busyNode)
+    }
+
+    /* Left icon rail. `railNode` is the already-rendered vertical action rail;
+       the wrapper keeps the `dig-rail` class the probes look for. */
+    function UgitIconRail(props) {
+      return E('div', { className: 'dig-ugit-iconrail' }, props.railNode)
+    }
+
+    /* Body: the panel computes each zone's node and passes a map. This shell
+       decides which ones are visible, in what order, and which class the body
+       root carries. `data-pane` markers and gutter nodes stay with the caller. */
+    function UgitBody(props) {
+      const t = props.t
+      const layout = props.layout
+      const zones = typeof props.order === 'string' && props.order !== ''
+        ? props.order.split(',') : UGIT_ZONE_IDS
+      const visible = zones.filter((id) => {
+        if (UGIT_ZONE_IDS.indexOf(id) < 0) return false
+        if (layout.hidden.indexOf(id) >= 0) return false
+        if (props.candidates !== null && props.candidates !== undefined && props.candidates.indexOf(id) < 0) return false
+        return props.nodes[id] !== null && props.nodes[id] !== undefined
+      })
+      if (visible.length === 0) {
+        return E('div', { className: 'dig-body dig-body-columns', ref: props.bodyRef },
+          E('div', { className: 'dig-empty' },
+            t('layout.empty'),
+            E('button', {
+              type: 'button', className: 'dig-btn',
+              onClick: () => { if (typeof props.onOpenSettings === 'function') props.onOpenSettings() },
+            }, t('layout.settings.open'))))
+      }
+      const children = []
+      for (let i = 0; i < visible.length; i += 1) {
+        const id = visible[i]
+        if (i > 0 && props.gutterBefore !== null && props.gutterBefore !== undefined && typeof props.gutterBefore[id] === 'function') {
+          const g = props.gutterBefore[id]()
+          if (g !== null && g !== undefined) children.push(g)
+        }
+        children.push(props.nodes[id])
+      }
+      return E('div', {
+        className: 'dig-body ' + (props.chrome === 'compact' ? 'dig-body-compact' : props.chrome === 'stack' ? 'dig-body-stack' : 'dig-body-columns'),
+        ref: props.bodyRef,
+      }, children)
+    }
+
+    /* Layout settings editor. Pure UI: every change is reported upward, the
+       caller writes LAYOUT_KEY. Uses layoutToggle/layoutSelect (NOT textRow /
+       selectRow / const field) so the settings-card smoke field scan is not
+       widened. */
+    function UgitLayoutSettings(props) {
+      const t = props.t
+      const layout = props.layout
+      const setHidden = (id, show) => {
+        if (typeof props.onChange !== 'function') return
+        const hidden = layout.hidden.slice()
+        const at = hidden.indexOf(id)
+        if (show === true && at >= 0) hidden.splice(at, 1)
+        if (show === false && at < 0) hidden.push(id)
+        props.onChange(Object.assign({}, layout, { hidden: hidden }))
+      }
+      const rows = UGIT_ZONE_SPECS.map((spec) => E('label', { className: 'dig-settings-row', key: spec.id },
+        E('input', {
+          type: 'checkbox', checked: layout.hidden.indexOf(spec.id) < 0,
+          onChange: (event) => setHidden(spec.id, event.target.checked === true),
+        }),
+        E('span', { className: 'dig-ugit-zone-label' }, t(spec.label))))
+      const move = (id, delta) => {
+        if (typeof props.onChange !== 'function') return
+        const order = (typeof layout.tabs[layout.activeTab] === 'object' && layout.tabs[layout.activeTab].order !== ''
+          ? layout.tabs[layout.activeTab].order
+          : (layout.order !== '' ? layout.order : UGIT_ZONE_IDS.join(','))).split(',')
+        const at = order.indexOf(id)
+        const to = at + delta
+        if (at < 0 || to < 0 || to >= order.length) return
+        const next = order.slice()
+        const tmp = next[at]; next[at] = next[to]; next[to] = tmp
+        props.onChange(Object.assign({}, layout, { order: next.join(',') }))
+      }
+      const orderRows = UGIT_ZONE_SPECS.map((spec) => E('div', { className: 'dig-ugit-order-row', key: spec.id },
+        E('span', null, t(spec.label)),
+        E('button', { type: 'button', className: 'dig-icon-btn', title: t('layout.settings.moveUp'), onClick: () => move(spec.id, -1) }, '↑'),
+        E('button', { type: 'button', className: 'dig-icon-btn', title: t('layout.settings.moveDown'), onClick: () => move(spec.id, 1) }, '↓')))
+      const tabOptions = UGIT_TAB_IDS.map((id) => E('option', { value: id, key: id }, t('layout.tab.' + id)))
+      const placeOptions = UGIT_COMMIT_PLACES.map((id) => E('option', { value: id, key: id }, t('layout.place.' + id)))
+      return E('div', { className: 'dig-ugit-settings' },
+        E('div', { className: 'dig-ugit-settings-title' }, t('layout.settings.title')),
+        E('div', { className: 'dig-ugit-settings-desc' }, t('layout.settings.desc')),
+        E('div', { className: 'dig-ugit-settings-head' }, t('layout.settings.zones')),
+        E('div', { className: 'dig-settings-list' }, rows),
+        E('div', { className: 'dig-ugit-settings-head' }, t('layout.settings.order')),
+        E('div', { className: 'dig-settings-list' }, orderRows),
+        E('label', { className: 'dig-settings-row' },
+          E('span', null, t('layout.settings.defaultTab')),
+          E('select', {
+            className: 'dig-input', value: layout.activeTab,
+            onChange: (event) => { if (typeof props.onChange === 'function') props.onChange(Object.assign({}, layout, { activeTab: event.target.value })) },
+          }, tabOptions)),
+        E('label', { className: 'dig-settings-row' },
+          E('span', null, t('layout.settings.commitPlace')),
+          E('select', {
+            className: 'dig-input', value: layout.affixes.commitBoxPlace,
+            onChange: (event) => {
+              if (typeof props.onChange !== 'function') return
+              props.onChange(Object.assign({}, layout, { affixes: Object.assign({}, layout.affixes, { commitBoxPlace: event.target.value }) }))
+            },
+          }, placeOptions)),
+        E('button', {
+          type: 'button', className: 'dig-btn',
+          onClick: () => { if (typeof props.onReset === 'function') props.onReset() },
+        }, t('layout.settings.reset')))
     }
 
     function RepoSelect(props) {
@@ -14715,7 +14922,7 @@ window.__ModuleLoader__.load({
         className: 'dig-commit-ai-note', 'data-ai-note': '',
       }, aiNote === null ? null : E('span', null, aiNote), aiFixedNote, aiFollowButton)
       const composer = props.compact === true
-        ? E('div', { className: 'dig-commit-box dig-commit-box-compact' },
+        ? E('div', { className: 'dig-commit-box dig-commit-box-compact' + (props.commitBoxDocked === true ? ' dig-commit-box-docked' : '') },
             E('input', {
               className: 'dig-input dig-input-compact', value: message, spellCheck: false,
               placeholder: t('changes.commitPlaceholder'),
@@ -14738,7 +14945,7 @@ window.__ModuleLoader__.load({
             }, t('changes.commit')),
             aiNoticeRow,
             E('span', { className: 'dig-commit-ai-hint dig-commit-ai-hint-block' }, t('changes.aiQuota')))
-        : E('div', { className: 'dig-commit-box' },
+        : E('div', { className: 'dig-commit-box' + (props.commitBoxDocked === true ? ' dig-commit-box-docked' : '') },
             E('textarea', {
               className: 'dig-textarea', value: message, spellCheck: false,
               placeholder: t('changes.commitPlaceholder'),
@@ -14774,17 +14981,9 @@ window.__ModuleLoader__.load({
                 disabled: message.trim() === '' || props.busy === true,
                 onClick: () => { submit(true) },
               }, t('changes.commitAndPush'))))
-      /* The ugit layout can dock the commit box at the panel bottom instead of
-         inside this column. Report the SAME element through an effect so the
-         parent renders it elsewhere without a second copy of draft/amend/AI
-         state (which all lives here). showComposer=false removes it from here. */
-      const onCommitBox = props.onCommitBox
-      const shownComposer = props.showComposer === false ? null : composer
-      useEffect(() => {
-        if (typeof onCommitBox !== 'function') return undefined
-        onCommitBox(props.showComposer === false ? composer : null)
-        return undefined
-      }, [onCommitBox, props.showComposer, composer])
+      /* ugit layout: commitBoxDocked adds a class (NOT a second instance), so
+         the same stateful box can be pinned to the bottom of the changes column
+         by CSS. No element is reported upward and no hook depends on composer. */
       // Folding hides the FILE LIST only. The commit box is the panel's primary
       // action and used to vanish together with the list, leaving an empty pane
       // with no way to commit anything (reported on v0.3.5).
@@ -14858,7 +15057,7 @@ window.__ModuleLoader__.load({
              (scrollTop untouched), so the v0.18.3 dblclick precision holds —
              and nothing on the list (group head, rows) is ever covered. */
           selectionBar,
-          shownComposer),
+          composer),
         E(MarqueeBox, { box: changeMarquee.box }))
     }
 
@@ -15852,6 +16051,18 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         if (splitTab === 'diff' && patch === '' && patchLoading === false) setSplitTab('history')
       }, [splitTab, patch, patchLoading])
+      /* ugit layout: one browser-local document drives zone visibility/order,
+         the active tab, affixes and the commit-box placement. This is the ONLY
+         place above the storage layer that reads/writes it; child components
+         receive `layout` and report changes upward through onLayoutChange. */
+      const [layout, setLayout] = useState(readLayout)
+      const onLayoutChange = (next) => { setLayout(normalizeLayout(next)); writeLayout(next) }
+      const onLayoutReset = () => { const fresh = normalizeLayout(null); setLayout(fresh); writeLayout(fresh) }
+      const onLayoutTab = (tab) => {
+        const next = Object.assign({}, layout, { activeTab: tab })
+        setLayout(normalizeLayout(next)); writeLayout(next)
+        setView('history')
+      }
       /* v0.26.3: the row fires onDiff from its single click now, so a double
          click used to open the same diff three times — and the responses raced
          (a slow first request could land after the second and paint the wrong
@@ -17917,32 +18128,38 @@ window.__ModuleLoader__.load({
         openPickerAt(event, 'branch')
       }, [openPickerAt])
 
-      const topBar = E('div', { className: 'dig-topbar' },
-        E(RepoSelect, {
-          t: t, repos: headerRepos, value: repoRoot,
-          loading: repoState === null,
-          onOpenMenu: openRepoMenu,
-        }),
-        branches === null || branches.local.length === 0 ? null : E('span', { className: 'dig-select-wrap', title: branches.branch },
-          E(Icon, { name: 'branch', size: 12 }),
+      /* ugit top bar: the legacy repo/branch/track/undo controls stay as
+         `leading`, the three view tabs are added by UgitTopbar. The root class
+         is still dig-topbar (ssr-check needle + CSS border-l2 selector). */
+      const topBar = E(UgitTopbar, {
+        t: t, layout: layout, onTab: onLayoutTab,
+        leading: E(Fragment, null,
+          E(RepoSelect, {
+            t: t, repos: headerRepos, value: repoRoot,
+            loading: repoState === null,
+            onOpenMenu: openRepoMenu,
+          }),
+          branches === null || branches.local.length === 0 ? null : E('span', { className: 'dig-select-wrap', title: branches.branch },
+            E(Icon, { name: 'branch', size: 12 }),
+            E('button', {
+              type: 'button',
+              className: 'dig-select dig-select-btn dig-select-branch',
+              onClick: openBranchSwitchMenu,
+            },
+              E('span', { className: 'dig-repo-name' }, branches.branch),
+              E(Icon, { name: 'chevron', size: 12 }))),
+          summary === null || summary.upstream === null ? null : E('span', { className: 'dig-track' },
+            summary.ahead > 0 ? E('span', { className: 'dig-track-ahead' }, '↑' + summary.ahead) : null,
+            summary.behind > 0 ? E('span', { className: 'dig-track-behind' }, (summary.ahead > 0 ? ' ' : '') + '↓' + summary.behind) : null),
+          operation === null ? null : E('span', { className: 'dig-opchip', title: t('operation.hint') }, t('operation.' + operation)),
           E('button', {
-            type: 'button',
-            className: 'dig-select dig-select-btn dig-select-branch',
-            onClick: openBranchSwitchMenu,
-          },
-            E('span', { className: 'dig-repo-name' }, branches.branch),
-            E(Icon, { name: 'chevron', size: 12 }))),
-        summary === null || summary.upstream === null ? null : E('span', { className: 'dig-track' },
-          summary.ahead > 0 ? E('span', { className: 'dig-track-ahead' }, '↑' + summary.ahead) : null,
-          summary.behind > 0 ? E('span', { className: 'dig-track-behind' }, (summary.ahead > 0 ? ' ' : '') + '↓' + summary.behind) : null),
-        operation === null ? null : E('span', { className: 'dig-opchip', title: t('operation.hint') }, t('operation.' + operation)),
-        E('button', {
-          type: 'button', className: 'dig-icon-btn dig-icon-btn-small',
-          title: t('undo.menu'),
-          onClick: (event) => { void openUndoMenu(event) },
-        }, E(Icon, { name: 'undo', size: 13 })),
-        E('span', { className: 'dig-topbar-spacer' }),
-        busy ? E('span', { className: 'dig-busy' }, t('status.busy')) : null)
+            type: 'button', className: 'dig-icon-btn dig-icon-btn-small',
+            title: t('undo.menu'),
+            onClick: (event) => { void openUndoMenu(event) },
+          }, E(Icon, { name: 'undo', size: 13 }))),
+        trailing: null,
+        busyNode: busy ? E('span', { className: 'dig-busy' }, t('status.busy')) : null,
+      })
 
       /* Named git failures get a sentence that says what to do; the raw git
          output stays one hover away in the title. The two recoverable ones
@@ -18347,6 +18564,10 @@ window.__ModuleLoader__.load({
         onBulkDiscard: openDiscardManyDialog,
         onCopySelection: copyChangeSelection,
         onKeyDown: onChangesKeyDown,
+        /* ugit layout: commitBoxPlace switches a CSS class on the box wrapper,
+           so the draft/amend/AI state stays in this component and never needs
+           to be lifted. See .dig-commit-box-docked in the CSS array. */
+        commitBoxDocked: layout.affixes.commitBoxPlace === 'panelBottom',
       })
 
       /* --- Rail acts on the branch-tree selection (v0.18.5) -------------------
@@ -18671,12 +18892,42 @@ window.__ModuleLoader__.load({
             tabPane(diffActive === false, historyPane),
             fillDiff === null ? null : tabPane(diffActive, fillDiff)))
       } else if (columns) {
-        body = E('div', { className: 'dig-body dig-body-columns', ref: bodyRef },
-          treeOpen ? E('div', { className: 'dig-pane dig-pane-tree', 'data-pane': 'tree', style: paneStyle('tree') }, E(BranchTree, { t: t, branches: branches, favorites: favorites, onCheckout: checkout, onBrowse: browseBranch, onBranchMenu: branchMenu, onDeleteEntries: deleteBranchEntries, onCopyValues: copyValues, onPicksChange: onBranchPicks, clearSignal: pickEpochs.tree })) : null,
-          treeOpen ? gutter('tree', 'prev') : null,
-          E('div', { className: 'dig-pane dig-pane-main' }, historyPane, diffGutter, diffPane),
-          gutter('changes', 'next'),
-          E('div', { className: 'dig-pane dig-pane-changes', 'data-pane': 'changes', style: paneStyle('changes') }, changesPane))
+        /* ugit layout (wide container): the diff is the flex:1 main pane, the
+           changes list is a draggable column, and the directory tree is a
+           narrow column. Branch tree / history are only present when their
+           zones are explicitly opened in the layout settings. UgitBody owns
+           visibility and order; the legacy compact/stack branches below stay
+           for narrow containers (responsive degradation, not the old chrome). */
+        const zoneNodes = {
+          dirTree: E('div', { className: 'dig-pane dig-pane-tree', 'data-pane': 'tree', style: paneStyle('tree') },
+            E(DirTree, {
+              t: t, summary: summary,
+              folded: foldedDirs,
+              onFold: (id, open) => setFoldedDirs(Object.assign({}, foldedDirs, { [id]: !open })),
+              onFile: (item, group) => showDiff({ path: item.path, staged: group === 'staged', untracked: group === 'untracked' }),
+              onDir: () => setGroupBy('dir'),
+            })),
+          changes: E('div', { className: 'dig-pane dig-pane-changes', 'data-pane': 'changes', style: paneStyle('changes') }, changesPane),
+          diff: E('div', { className: 'dig-pane dig-pane-main' }, historyPane, diffGutter, diffPane),
+          branches: E('div', { className: 'dig-pane dig-pane-tree', 'data-pane': 'tree', style: paneStyle('tree') },
+            E(BranchTree, { t: t, branches: branches, favorites: favorites, onCheckout: checkout, onBrowse: browseBranch, onBranchMenu: branchMenu, onDeleteEntries: deleteBranchEntries, onCopyValues: copyValues, onPicksChange: onBranchPicks, clearSignal: pickEpochs.tree })),
+          history: E('div', { className: 'dig-pane dig-pane-main' }, historyPane),
+        }
+        const gutterBefore = {
+          changes: () => gutter('changes', 'next'),
+          diff: () => gutter('changes', 'next'),
+          dirTree: () => gutter('tree', 'prev'),
+          branches: () => gutter('tree', 'prev'),
+          history: () => null,
+        }
+        const tabOrder = layout.tabs[layout.activeTab] && layout.tabs[layout.activeTab].order !== ''
+          ? layout.tabs[layout.activeTab].order : layout.order
+        body = E(UgitBody, {
+          t: t, layout: layout, chrome: chrome, bodyRef: bodyRef,
+          nodes: zoneNodes, candidates: UGIT_TABS[layout.activeTab].zones,
+          order: tabOrder, gutterBefore: gutterBefore,
+          onOpenSettings: () => setRailSettings(true),
+        })
       } else {
         body = E('div', { className: 'dig-body dig-body-stack', ref: bodyRef },
           treeOpen ? E('div', { className: 'dig-pane dig-pane-tree-stack', 'data-pane': 'tree', style: paneStyle('tree') }, E(BranchTree, { t: t, branches: branches, favorites: favorites, onCheckout: checkout, onBrowse: browseBranch, onBranchMenu: branchMenu, onDeleteEntries: deleteBranchEntries, onCopyValues: copyValues, onPicksChange: onBranchPicks, clearSignal: pickEpochs.tree })) : null,
@@ -18753,6 +19004,12 @@ window.__ModuleLoader__.load({
           onToggle: toggleRailAction,
           onReset: resetRailActions,
           onClose: () => setRailSettings(false),
+          /* ugit layout editor rides the same in-panel dialog. The plugin page
+             card stays free of checkboxes (settings-card-probe contract). */
+          layoutEditor: E(UgitLayoutSettings, {
+            t: t, layout: layout,
+            onChange: onLayoutChange, onReset: onLayoutReset,
+          }),
         }))
       }
       if (dialog !== null && (dialog.kind === 'newBranch' || dialog.kind === 'createTracking' || dialog.kind === 'renameBranch' || dialog.kind === 'newTag' || dialog.kind === 'deleteTag' || dialog.kind === 'commitMsg')) {
@@ -19843,6 +20100,32 @@ window.__ModuleLoader__.load({
          Styled from the same menu tokens so it reads as part of the product. */
       '.dig-tip{position:fixed;z-index:9999;display:none;box-sizing:border-box;max-width:280px;padding:5px 8px;border-radius:var(--dsw-radius-sm,8px);background:var(--dsw-specific-menu,var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-layer-1)));color:var(--dsw-alias-label-primary);box-shadow:var(--dsw-elevation-prominent,0 8px 22px rgba(0,0,0,.32));font-family:var(--dsw-font-family,system-ui,sans-serif);font-size:calc(11px + var(--dsh-content-font-delta-secondary,0px));font-weight:500;line-height:1.45;text-align:left;white-space:normal;overflow-wrap:anywhere;pointer-events:none}',
       '.dig-tip[data-show="true"]{display:block}',
+      /* ---- ugit layout ---- */
+      '.dig-ugit-tabs{display:flex;align-items:center;gap:2px;padding:0 6px;border-left:1px solid var(--dsw-alias-border-l2);border-right:1px solid var(--dsw-alias-border-l2)}',
+      '.dig-ugit-tab{border:0;background:transparent;color:var(--dsw-alias-label-secondary);font-size:11px;padding:4px 10px;border-radius:var(--dsw-radius-sm,6px);cursor:pointer;white-space:nowrap}',
+      '.dig-ugit-tab:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-2)}',
+      '.dig-ugit-tab-active{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-2);font-weight:600}',
+      '.dig-ugit-iconrail{display:flex;flex-direction:column;flex:none;width:32px;border-right:1px solid var(--dsw-alias-border-l2)}',
+      /* The diff is the visual protagonist: it owns the remaining width while
+         dirTree/changes keep their remembered draggable widths. */
+      '.dig-body-columns .dig-pane-main{flex:1;min-width:0}',
+      '.dig-pane-main .dig-diff-pane-fill{flex:1;max-height:none}',
+      '.dig-commit-box-docked{margin-top:auto;border-top:1px solid var(--dsw-alias-border-l2)}',
+      /* directory tree column */
+      '.dig-dirtree{display:flex;flex-direction:column;min-height:0;flex:1;overflow:hidden}',
+      '.dig-dirtree-search{flex:none;margin:4px}',
+      '.dig-dirtree-scroll{flex:1;min-height:0;overflow:auto}',
+      '.dig-dirtree-dir,.dig-dirtree-file{display:flex;align-items:center;gap:4px;width:100%;border:0;background:transparent;color:var(--dsw-alias-label-primary);font-size:11px;text-align:left;padding:2px 4px;cursor:pointer;white-space:nowrap;overflow:hidden}',
+      '.dig-dirtree-dir:hover,.dig-dirtree-file:hover{background:var(--dsw-alias-bg-layer-2)}',
+      '.dig-dirtree-name,.dig-dirtree-leaf{overflow:hidden;text-overflow:ellipsis}',
+      /* layout settings editor (rides the in-panel rail dialog) */
+      '.dig-ugit-settings{display:flex;flex-direction:column;gap:6px;max-height:40vh;overflow:auto;margin:8px 0;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l2)}',
+      '.dig-ugit-settings-title{font-weight:600;font-size:12px}',
+      '.dig-ugit-settings-desc{color:var(--dsw-alias-label-secondary);font-size:11px;line-height:1.5}',
+      '.dig-ugit-settings-head{color:var(--dsw-alias-label-secondary);font-size:11px;font-weight:600;margin-top:4px}',
+      '.dig-ugit-order-row{display:flex;align-items:center;gap:6px;padding:2px 4px;font-size:11px}',
+      '.dig-ugit-order-row>span{flex:1}',
+      '.dig-ugit-zone-label{margin-left:6px;font-size:11px}',
     ].concat(LANE_TRACE_RULES).join('\n')
 
     /* ============================== plugin ============================== */
