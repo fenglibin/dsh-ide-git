@@ -14774,6 +14774,17 @@ window.__ModuleLoader__.load({
                 disabled: message.trim() === '' || props.busy === true,
                 onClick: () => { submit(true) },
               }, t('changes.commitAndPush'))))
+      /* The ugit layout can dock the commit box at the panel bottom instead of
+         inside this column. Report the SAME element through an effect so the
+         parent renders it elsewhere without a second copy of draft/amend/AI
+         state (which all lives here). showComposer=false removes it from here. */
+      const onCommitBox = props.onCommitBox
+      const shownComposer = props.showComposer === false ? null : composer
+      useEffect(() => {
+        if (typeof onCommitBox !== 'function') return undefined
+        onCommitBox(props.showComposer === false ? composer : null)
+        return undefined
+      }, [onCommitBox, props.showComposer, composer])
       // Folding hides the FILE LIST only. The commit box is the panel's primary
       // action and used to vanish together with the list, leaving an empty pane
       // with no way to commit anything (reported on v0.3.5).
@@ -14847,7 +14858,7 @@ window.__ModuleLoader__.load({
              (scrollTop untouched), so the v0.18.3 dblclick precision holds —
              and nothing on the list (group head, rows) is ever covered. */
           selectionBar,
-          composer),
+          shownComposer),
         E(MarqueeBox, { box: changeMarquee.box }))
     }
 

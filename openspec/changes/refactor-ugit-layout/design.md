@@ -91,12 +91,13 @@
 
 **关键约束（已确证）**：`tests/smoke.mjs:1659–1666` 扫描 `RailSettingsCard` 源码里的 `const field = '…'` 与 `(textRow|selectRow)\('…'`，逐个要求宿主 `config.js` 有 `shape.<field> = schema.*()`。新卡只加只读说明与按钮、**不写字段**，扫描集合不变；`RailSettings`(12653) 在切片范围(1659) 之外，其 `layoutToggle`/`layoutSelect` 不会被误扫。仍**新增 smoke 断言**覆盖 `LAYOUT_KEY` 的 `normalizeLayout`/`readLayout`/`writeLayout` 与「双向翻转」行为，确保不是靠绕过检查蒙混。
 
-**「提交框换位置」的显式处理（能力缺口，审查第 14 条）**：提交框是 `ChangesPanel` 内部 `composer`(14090–14160) **硬编码渲染**的（确证 14114–14160），不是独立可搬运节点。因此：
-> 给 `ChangesPanel` 新增可选 prop `showComposer`（默认 `true`，保持既有行为不变）：`showComposer===false` 时不渲染内部 `composer`；`UgitBody` 在 `commitBoxPlace==='panelBottom'` 时用**抽出的共享 `CommitBox` 组件**在面板底部渲染同一个提交入口。抽取 = 把 14090–14160 的 `composer` JSX 提为 `function CommitBox(props)`，`ChangesPanel` 与 `UgitBody` 都调它；`submit`/`aiRun`/`ModelRoutePicker`/`amend` 等闭包通过 props 传入，不改提交逻辑、不动 `confirm: true`（不变量 4）。`ChangesPanel` 其他 props 与 `smoke.mjs:1246–1249` 的 `head` 文本断言不动。
+**「提交框换位置」的显式处理（实现层取舍已落地；原稿「抽出共享 CommitBox 组件」作废）**：提交框是 `ChangesPanel` 内部 `composer` 硬编码渲染的，7 个 `useState` + `aiRun`/`submit`/`aiFollowSession`/`aiConfirmDialog` 全在 `ChangesPanel` 内；且 `const composer = props.compact === true` 是 `smoke.mjs:1591` 的切片锚点、`E(ModelRoutePicker, …)` 有「恰好 2 次」计数断言(2240)、`aiRun`→`setAiUndo(` 有切片断言(1869)。**整块搬迁成 `CommitBox` 组件会连锁打破这三条**，故采用等价但零破坏的做法：
+> 给 `ChangesPanel` 新增两个可选 prop：`showComposer`（默认 `true`；`false` 时用 `shownComposer = null` 从本列移除 composer）与 `onCommitBox(node)`（在 `useEffect` 里把**同一个 composer React element** 上报给父级，父级渲染到面板底部）。state 仍唯一留在 `ChangesPanel` 内、上报的是同一 element 而非第二份实例，故 `panelBottom` 落点不会丢草稿/amend/AI 状态，也不会在 render 期触发父级 setState。
+> `composer` JSX、`confirm: true`、`smoke.mjs:1246–1249` 的 `head` 文本断言全部一字不动；`E(ChangesPanel, {…})` 新增的两个 prop 放在 `onCommit:` 之后以避开 `smoke.mjs:1875` 的 `base: base,` 切片。
 
 **被否决的备选**：*用 CSS `order` 把 `composer` 挪到底部* —— 否决：`composer` 在 `ChangesPanel` 的 flex 列内部，CSS order 无法跨出列容器；且会破坏 `dig-commit-box` 的 border-l2 断言(1853)。*把布局开关放插件页设置卡* —— 否决：见上，探针必挂。
 
-**影响面**：`src/client.js`（`RailSettingsCard` 只加只读说明+按钮、`RailSettings` 加布局开关、`ChangesPanel` 加 `showComposer`、`UgitBody` 消费 `commitBoxPlace`、新增 `CommitBox`）、`tests/smoke.mjs`（新增 `LAYOUT_KEY` 纯函数与双向翻转断言）、`scripts/settings-card-probe.mjs` **零改动**。`src/host/config.js` / `RAIL_CONFIG_IDS` / `configForms` 绑定 **不动**。
+**影响面**：`src/client.js`（`RailSettingsCard` 只加只读说明+按钮、`RailSettings` 加布局开关、`ChangesPanel` 加 `showComposer`/`onCommitBox`、`UgitBody` 消费 `commitBoxPlace`）、`tests/smoke.mjs`（新增 `LAYOUT_KEY` 纯函数与双向翻转断言）、`scripts/settings-card-probe.mjs` **零改动**。`src/host/config.js` / `RAIL_CONFIG_IDS` / `configForms` 绑定 **不动**。
 
 ### D7 词典、文档、测试与截图的同步演进
 

@@ -110,7 +110,7 @@
 | 变更行：黄色 `M` / 绿色 `A` / `?` 状态图标 + 路径 + 目录分组 + 选中高亮 | **做（既有）** | `ChangeRow`(13718) 的 `dig-file-status dig-file-status-<M\|A\|U\|…>`(13741) + `dig-row-selected`(13730) / `ChangesPanel` 的 `groupBy:'dir'`(13790) / `foldedDirs`(13796) / `onSelectionChange`(17705) |
 | 大号 split diff：路径面包屑 + 基础版本┃本地修改 + 行号 + Shiki 高亮 + ±统计 + 左右同步滚动 + `UTF-8 / LF` 字样 | **做（同步滚动/高亮既有；`UTF-8 / LF` 不做）** | `fillDiff`(17960) → `DiffBody`(11134) → `LineDiff`(11548)，默认 `split:true`（D5）；同步滚动 = `SplitColumns`(11459) 的 `scrollLeft`/`scrollTop` 镜像(11470)；「在右侧栏打开」沿用 `diff.sidebar.*`(17410–17417)。`UTF-8 / LF` 是编辑器编码指示，§0.4 已表态不做 |
 | diff 头部：`文件视图 / 查看修改 / ⋯ / 监视` | **不做** | §0.4 / §1.3：属 ugit 编辑器工具条，非 Git 工具窗口职责 |
-| 提交框：待提交(0) / 储藏变更 / 提交信息框 / 提交至 master ▾ | **只做「提交信息框」，其余不做** | `CommitBox`（D6 从 `ChangesPanel` 14090–14160 抽出）：保留 `textarea`(`changes.commitPlaceholder`)、`amend`(14140)、AI 写信息(14124–14132)、`提交`(14151)、`提交并推送`(14155, `changes.commitAndPush`)。「储藏变更」复选框 / 「推送远程」单选 / 「待提交(N)」计数 / 「提交至 <分支>」文案**不新增**（§0.4 已表态），理由：会引入未要求的提交策略语义并触碰不变量 4 的确认链路；`stashPush` / `commitAndPush` 既有能力仍在动作条里可达 |
+| 提交框：待提交(0) / 储藏变更 / 提交信息框 / 提交至 master ▾ | **只做「提交信息框」，其余不做** | `ChangesPanel` 的 `composer`（D6 的 `showComposer`/`onCommitBox`）：保留 `textarea`(`changes.commitPlaceholder`)、`amend`(14140)、AI 写信息(14124–14132)、`提交`(14151)、`提交并推送`(14155, `changes.commitAndPush`)。「储藏变更」复选框 / 「推送远程」单选 / 「待提交(N)」计数 / 「提交至 <分支>」文案**不新增**（§0.4 已表态），理由：会引入未要求的提交策略语义并触碰不变量 4 的确认链路；`stashPush` / `commitAndPush` 既有能力仍在动作条里可达 |
 | `文件视图 / 查看修改 / ⋯ / 监视 / UTF-8 / LF` | **不做** | §0.4 已表态：属 ugit 编辑器外壳，非 Git 工具窗口职责 |
 | 顶部「新版本已发布 升级」胶囊、底部平台状态栏、云/机器人/头像图标 | **不做** | §0.4 已表态：平台推广/账号装饰 |
 
@@ -278,13 +278,13 @@
 
 **关键约束（已确证）**：`tests/smoke.mjs:1659–1666` 扫描 `RailSettingsCard` 源码里的 `const field = '…'` 与 `(textRow|selectRow)\('…'`，逐个要求宿主 `config.js` 有 `shape.<field> = schema.*()`。由于新卡只加只读说明与按钮、**不写字段**，该扫描的集合不变；`RailSettings`(12653) 在切片范围(1659) 之外，其 `layoutToggle`/`layoutSelect` 不会被误扫。仍**新增 smoke 断言**覆盖 `LAYOUT_KEY` 的 `normalizeLayout`/`readLayout`/`writeLayout` 与「双向翻转」行为，确保不是靠绕过检查蒙混。
 
-**「提交框换位置」的显式处理（原稿假设了不存在的可搬运节点）**：提交框是 `ChangesPanel` 内部 `composer`(14090–14160) **硬编码渲染**的（确证 14114–14160），不是独立节点。因此：
-> 给 `ChangesPanel` 新增一个可选 prop `showComposer`（默认 `true`，保持既有行为不变）：`showComposer===false` 时不渲染内部 `composer`；`UgitBody` 在 `commitBoxPlace==='panelBottom'` 时用**抽出的共享 `CommitBox` 组件**在面板底部渲染同一个提交入口。抽取做法 = 把 14090–14160 的 `composer` JSX 提为 `function CommitBox(props)`，`ChangesPanel` 与 `UgitBody` 都调它；提交所需的 `submit`/`aiRun`/`ModelRoutePicker`/`amend` 等闭包通过 props 传入，不改提交逻辑、不动 `confirm: true`（不变量 4）。
-> `ChangesPanel` 的其他 props 与 `smoke.mjs:1246–1249` 的 `head` 文本断言不动。
+**「提交框换位置」的显式处理（实现层取舍已落地；原稿「抽出共享 CommitBox 组件」作废）**：提交框是 `ChangesPanel` 内部 `composer` 硬编码渲染的，7 个 `useState` + `aiRun`/`submit`/`aiFollowSession`/`aiConfirmDialog` 全在 `ChangesPanel` 内；且 `const composer = props.compact === true` 是 `smoke.mjs:1591` 的切片锚点、`E(ModelRoutePicker, …)` 有「恰好 2 次」计数断言(2240)、`aiRun`→`setAiUndo(` 有切片断言(1869)。**整块搬迁成 `CommitBox` 组件会连锁打破这三条**，故采用等价但零破坏的做法：
+> 给 `ChangesPanel` 新增两个可选 prop：`showComposer`（默认 `true`；`false` 时用 `shownComposer = null` 从本列移除 composer）与 `onCommitBox(node)`（在 `useEffect` 里把**同一个 composer React element** 上报给父级，父级渲染到面板底部）。state 仍唯一留在 `ChangesPanel` 内、上报的是同一 element 而非第二份实例，故 `panelBottom` 落点不会丢草稿/amend/AI 状态，也不会在 render 期触发父级 setState。
+> `composer` JSX、`confirm: true`、`smoke.mjs:1246–1249` 的 `head` 文本断言全部一字不动；`E(ChangesPanel, {…})` 新增的两个 prop 放在 `onCommit:` 之后以避开 `smoke.mjs:1875` 的 `base: base,` 切片。
 
 **被否决的备选**：*用 CSS `order` 把 `composer` 挪到底部* —— 否决：`composer` 在 `ChangesPanel` 的 flex 列内部，CSS order 无法跨出列容器；且会破坏 `dig-commit-box` 的 border-l2 断言(1853)。
 
-**影响面**：`src/client.js`（`RailSettingsCard` 只加只读说明+按钮、`RailSettings` 加布局开关、`ChangesPanel` 加 `showComposer`、`UgitBody` 消费 `commitBoxPlace`、新增 `CommitBox`）、`tests/smoke.mjs`（新增 `LAYOUT_KEY` 纯函数与双向翻转断言）、`scripts/settings-card-probe.mjs` **零改动**（据上文探针确证，布局开关不在卡内）。`src/host/config.js` / `RAIL_CONFIG_IDS` / `configForms` 绑定 **不动**。
+**影响面**：`src/client.js`（`RailSettingsCard` 只加只读说明+按钮、`RailSettings` 加布局开关、`ChangesPanel` 加 `showComposer`/`onCommitBox`、`UgitBody` 消费 `commitBoxPlace`）、`tests/smoke.mjs`（新增 `LAYOUT_KEY` 纯函数与双向翻转断言）、`scripts/settings-card-probe.mjs` **零改动**（据上文探针确证，布局开关不在卡内）。`src/host/config.js` / `RAIL_CONFIG_IDS` / `configForms` 绑定 **不动**。
 
 ### D7 词典、文档、测试与截图的同步演进
 
@@ -354,7 +354,7 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 - `hidden[]`（全局）vs `UGIT_TABS[tab].zones`（每 Tab 候选）：**显隐优先**（1.2 已表态），Tab 只给候选、不覆盖用户的打开动作。
 - `tabs[*].order` vs 顶层 `order`：**Tab 级 order 优先**；顶层 `order` 仅作为「所有 Tab 统一顺序」的便捷覆盖，两者同时存在时取 `tabs[activeTab].order || order || 默认`。
 - `treeOpen`(PANES_KEY) vs `hidden.includes('dirTree')`：**hidden 优先**（D3 已表态）。
-- `commitBox` 显隐 vs `showComposer` prop：`affixes.commitBox===false` 时一律不渲染 `CommitBox`（含两处落点）。
+- `commitBox` 显隐 vs `showComposer` prop：`affixes.commitBox===false` 时一律不渲染 composer（含两处落点）。
 
 ## 5. 组件与改动点（逐项确证，回答第 12/13 条）
 
@@ -366,9 +366,9 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 | `src/client.js:11379–11388` `readLineDiffPrefs` | 默认值 `{split:false}` → `{split:true}`；签名/键/形状不变 | D5 |
 | `src/client.js:10493` `dirName` / `10508` `buildDirForest` / `9241` `remoteTreeStripOf` | **不动**，由新 `DirTree` 调用 | D4 |
 | `src/client.js:9701–9715` `TREE_KEY` 读写 | **不动**，复用给 `DirTree` 折叠 | D4 |
-| `src/client.js:13757` `ChangesPanel` | **仅新增** `showComposer` prop；抽出 `CommitBox`；其余 props / `head` 断言不动 | D6 |
+| `src/client.js:13757` `ChangesPanel` | **仅新增** `showComposer` / `onCommitBox` 两个 prop；`composer` JSX 与其余 props / `head` 断言不动 | D6 |
 | 新增 `UGIT_ZONE_SPECS` / `UGIT_AFFIX_SPECS` / `UGIT_TABS` / `LAYOUT_KEY` / `normalizeLayout` / `readLayout` / `writeLayout` | **最终安全落点**：`writePanes`(10379) 结束之后、`/* ---- dock action core`(10384) 开始之前（经 smoke 全部 `client.indexOf` 切片标记确证不在任何切片内部，见 §5 落点修正） | D2 |
-| 新增 `UgitTopbar` / `UgitIconRail` / `DirTree` / `UgitBody` / `UgitLayoutSettings` / `CommitBox` | 放在 `RailSettings`(12653) 附近的组件区 | D3/D4/D6 |
+| 新增 `UgitTopbar` / `UgitIconRail` / `DirTree` / `UgitBody` / `UgitLayoutSettings` | 放在 `RailSettings`(12653) 附近的组件区 | D3/D4/D6 |
 | `src/client.js:17282–17307` `topBar` | 替换为 `UgitTopbar`（保留 `RepoSelect`/分支下拉/chip/齿轮/动作图标） | D3 |
 | `src/client.js:17999–18055` body 五分支 | 替换为单个 `UgitBody`（按配置 map 列 + gutter；保留 `dig-body-columns`/`stack`/`compact` 与 `[data-pane]`，含 `data-pane="diff"`） | D1 |
 | `src/client.js:17896–17942` `renderRail` | 动作图标收进 `UgitTopbar`/`UgitIconRail`；`railCapacityOf`(17888) 改为按顶栏宽度算；`RAIL_VIEW_IDS`/`RAIL_SPECS` 不动 | D1/D3 |
@@ -400,7 +400,7 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 本次**不触及**认证、授权、沙箱、文件访问、凭据处理；以下既有不变式逐条保持：
 | 不变式 | 保持方式 |
 |---|---|
-| 不变量 4：破坏性操作 `confirm: true`（push / `reset --hard` / `branch -D` / `clean` / `stash drop`），「提交并推送」唯一例外 | `CommitBox` 抽取只搬 JSX，不碰 `submit(push)` 与守卫字符串；`ConfirmDialog` 链路不动 |
+| 不变量 4：破坏性操作 `confirm: true`（push / `reset --hard` / `branch -D` / `clean` / `stash drop`），「提交并推送」唯一例外 | composer JSX 一字不动，不碰 `submit(push)` 与守卫字符串；`ConfirmDialog` 链路不动 |
 | 不变量 5：两条信任围栏（`isTrusted(req)` + POST） | 宿主半不动 |
 | 不变量 13：浮层在 `.dig-root`(position:relative) 内 `position:absolute`，锚点减 `hostRef` rect | 新顶栏的仓库/分支下拉沿用 `openPickerAt`(16324) → `ContextMenu`(11784) → `SearchPicker`(11896)；`dig-root`/`dig-shell` 保留 |
 | 不变量 15/16：删除/覆盖留撤回句柄、写方法登记 `WRITE_METHODS` | 宿主半不动 |
@@ -417,7 +417,7 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 | `LAYOUT_KEY` 全新键 | **完全可逆** | 删除代码或 `localStorage.removeItem('dsh-ide-git.layout.v2')` 即回默认；不迁移、不覆盖任何旧键 |
 | `UgitBody` / `UgitTopbar` 等新组件替换 body | **可逆** | git revert 本次 client.js 改动即可；旧 `PANES_KEY`/`LINEDIFF_KEY`/`TREE_KEY` 数据保持可读（未改形状） |
 | `readLineDiffPrefs` 默认值 `split:false→true` | **可逆，但属外部可见行为变更**（唯一一项） | 改回常量即可；**已显式标注**：仅影响从未操作过 split 的用户；老用户 stored 值优先，偏好不丢 |
-| `ChangesPanel` 新增 `showComposer` prop | **可逆，向后兼容** | 默认 `true`，旧调用方不传即原行为；`CommitBox` 抽取不改提交逻辑 |
+| `ChangesPanel` 新增 `showComposer` prop | **可逆，向后兼容** | 默认 `true`，旧调用方不传即原行为；composer JSX 不改提交逻辑 |
 | 21 门词典新增 `layout.*` 键 | **可逆** | 删键 + 同步删断言；不删既有键 |
 | README 6 张图重拍 | **可逆** | 图片是工作区文件，git 可回退 |
 | **不做**的事：旧 `PANES_KEY` 形状、`RAIL_KEY` 迁移、`config.js` schema、profile、已发布接口语义 | — | 全部不碰，因此**没有数据格式迁移、没有已发布接口语义变更、没有跨版本数据格式变更** |
@@ -451,7 +451,7 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 ### 7.2 分阶段实施（每阶段可独立验证）
 1. **配置层**：`UGIT_ZONE_SPECS` / `UGIT_AFFIX_SPECS` / `UGIT_TABS` / `LAYOUT_KEY` / `normalizeLayout` / `readLayout` / `writeLayout` + 新 smoke 切片断言（纯函数先绿）。
 2. **词典**：21 门批量插入 `layout.*` 键，`npm test` 验证键集；同时改 `readLineDiffPrefs` 默认值并钉断言（D5）。
-3. **新组件**：`CommitBox`（从 `ChangesPanel` 抽出）→ `DirTree` → `UgitTopbar` / `UgitIconRail` → `UgitBody` → `UgitLayoutSettings`。
+3. **新组件**：`showComposer`/`onCommitBox`（`ChangesPanel` 新增 prop）→ `DirTree` → `UgitTopbar` / `UgitIconRail` → `UgitBody` → `UgitLayoutSettings`。
 4. **接线**：替换 `topBar` 与 body 五分支，收敛 `view`/`splitTab`/`renderRail`，`ChangesPanel` 加 `showComposer`。
 5. **CSS**：ugit 单行顶栏、三列主体、大 diff（`flex:1` + `data-pane="diff"`）、提交框两处落点；保留 11 个 border-l2 选择器与兼容类名。
 6. **设置面**：面板内齿轮 `RailSettings` 加布局开关（逐区显隐/顺序/默认 Tab/提交框落点/恢复默认）；插件页 `RailSettingsCard` 只加只读说明 + 「打开布局设置」入口按钮（**不加 checkbox**，据 D6 探针确证）。
