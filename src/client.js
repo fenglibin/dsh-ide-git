@@ -14023,9 +14023,12 @@ window.__ModuleLoader__.load({
         const id = visible[i]
         if (i > 0 && props.gutterBefore !== null && props.gutterBefore !== undefined && typeof props.gutterBefore[id] === 'function') {
           const g = props.gutterBefore[id]()
-          if (g !== null && g !== undefined) children.push(g)
+          if (g !== null && g !== undefined) children.push(E(Fragment, { key: 'gutter-' + id }, g))
         }
-        children.push(props.nodes[id])
+        /* Keyed wrappers: React renders this array as a list, and an unkeyed
+           column would emit a console warning on every layout change (caught by
+           the SSR render probe). Fragment adds no DOM node. */
+        children.push(E(Fragment, { key: 'zone-' + id }, props.nodes[id]))
       }
       return E('div', {
         className: 'dig-body ' + (props.chrome === 'compact' ? 'dig-body-compact' : props.chrome === 'stack' ? 'dig-body-stack' : 'dig-body-columns'),
@@ -14054,6 +14057,19 @@ window.__ModuleLoader__.load({
           onChange: (event) => setHidden(spec.id, event.target.checked === true),
         }),
         E('span', { className: 'dig-ugit-zone-label' }, t(spec.label))))
+      /* The three affix zones are toggled too (req/5 covers "功能区" broadly,
+         not just columns). They live in layout.affixes as booleans. */
+      const affixRows = UGIT_AFFIX_SPECS.map((spec) => E('label', { className: 'dig-settings-row', key: 'affix-' + spec.id },
+        E('input', {
+          type: 'checkbox', checked: layout.affixes[spec.id] !== false,
+          onChange: (event) => {
+            if (typeof props.onChange !== 'function') return
+            props.onChange(Object.assign({}, layout, {
+              affixes: Object.assign({}, layout.affixes, { [spec.id]: event.target.checked === true }),
+            }))
+          },
+        }),
+        E('span', { className: 'dig-ugit-zone-label' }, t(spec.label))))
       const move = (id, delta) => {
         if (typeof props.onChange !== 'function') return
         const order = (typeof layout.tabs[layout.activeTab] === 'object' && layout.tabs[layout.activeTab].order !== ''
@@ -14077,6 +14093,7 @@ window.__ModuleLoader__.load({
         E('div', { className: 'dig-ugit-settings-desc' }, t('layout.settings.desc')),
         E('div', { className: 'dig-ugit-settings-head' }, t('layout.settings.zones')),
         E('div', { className: 'dig-settings-list' }, rows),
+        E('div', { className: 'dig-settings-list' }, affixRows),
         E('div', { className: 'dig-ugit-settings-head' }, t('layout.settings.order')),
         E('div', { className: 'dig-settings-list' }, orderRows),
         E('label', { className: 'dig-settings-row' },
@@ -15068,7 +15085,7 @@ window.__ModuleLoader__.load({
              (scrollTop untouched), so the v0.18.3 dblclick precision holds —
              and nothing on the list (group head, rows) is ever covered. */
           selectionBar,
-          composer),
+          props.commitBoxHidden === true ? null : composer),
         E(MarqueeBox, { box: changeMarquee.box }))
     }
 
@@ -18579,6 +18596,7 @@ window.__ModuleLoader__.load({
            so the draft/amend/AI state stays in this component and never needs
            to be lifted. See .dig-commit-box-docked in the CSS array. */
         commitBoxDocked: layout.affixes.commitBoxPlace === 'panelBottom',
+        commitBoxHidden: layout.affixes.commitBox === false,
       })
 
       /* --- Rail acts on the branch-tree selection (v0.18.5) -------------------
@@ -19362,12 +19380,13 @@ window.__ModuleLoader__.load({
           + (compact ? ' dig-root-narrow' : '')
           + (paneDragging === null ? '' : ' dig-pane-dragging' + (paneByWidth ? '-v' : '-h')),
         ref: hostRef,
-      }, topBar,
+      }, layout.affixes.toolbar === false ? null : topBar,
         columns === true || repoRoot === null ? null : renderRail(false),
         banner, noteBanner,
         E(LoadTrace, { t: t, trace: traceRef.current, tick: traceTick, request: request, cwd: cwd, repoRoot: repoRoot }),
         E('div', { className: 'dig-shell' },
-          columns === true && repoRoot !== null ? renderRail(true) : null,
+          columns === true && repoRoot !== null && layout.affixes.iconRail !== false
+            ? E(UgitIconRail, { key: 'iconrail', railNode: renderRail(true) }) : null,
           body),
         gitOutput === null ? null : E(GitOutputDrawer, {
           t: t, entries: gitOutput,

@@ -2725,3 +2725,20 @@ test('ugit layout wiring: one document, four shells, no cross-layer reads (v0.37
   assert.doesNotMatch(card, /layoutToggle|layoutSelect|UgitLayoutSettings/,
     'settings-card-probe sees no new checkboxes')
 })
+
+test('ugit affix zones are switchable and keyed columns render (v0.37.0)', () => {
+  // req/5 covers ALL 功能区, not just the five columns: toolbar / iconRail /
+  // commitBox must each have a checkbox that writes layout.affixes, and each
+  // boolean must have a real consumer in the rendered panel.
+  assert.match(client, /const affixRows = UGIT_AFFIX_SPECS\.map/, 'the settings editor lists affix zones')
+  assert.match(client, /affixes: Object\.assign\(\{\}, layout\.affixes, \{ \[spec\.id\]: event\.target\.checked === true \}\)/,
+    'an affix checkbox writes its boolean into layout.affixes')
+  assert.match(client, /layout\.affixes\.toolbar === false \? null : topBar/, 'the toolbar toggle is consumed')
+  assert.match(client, /layout\.affixes\.iconRail !== false/, 'the iconRail toggle is consumed')
+  assert.match(client, /E\(UgitIconRail, \{ key: 'iconrail'/, 'UgitIconRail has a real consumer')
+  assert.match(client, /commitBoxHidden: layout\.affixes\.commitBox === false/, 'the commitBox toggle is consumed')
+  assert.match(client, /props\.commitBoxHidden === true \? null : composer/, 'ChangesPanel hides the box on request')
+  // Keyed wrappers: the column array is a React list and must not warn.
+  assert.match(client, /E\(Fragment, \{ key: 'zone-' \+ id \}/, 'each column is keyed')
+  assert.match(client, /E\(Fragment, \{ key: 'gutter-' \+ id \}/, 'each gutter is keyed')
+})
