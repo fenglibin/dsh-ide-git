@@ -49,6 +49,8 @@
 
 `normalizeLayout` MUST 丢弃未知/重复 id、按 `UGIT_ZONE_SPECS` 补齐缺失 id、非法 `activeTab` 回退 `'changes'`、`affixes` 逐项布尔化、`commitBoxPlace` 非法回退 `'changesBottom'`、`extraRatios` 夹到规格 min/max。所有 localStorage 读写 MUST `try/catch` 静默降级。写路径 MUST NOT 回退到退役键 `RAIL_KEY`。新配置 MUST NOT 写宿主行 Config / profile / `config.js`。
 
+**可选性（null 与缺省的区别）**：`hidden` 字段缺省 / 为 `null` / 非数组 MUST 返回规格默认隐藏集 `['branches','history']`；`hidden: []`（空数组）MUST 返回空隐藏集（用户显式打开全部区）；非空数组 MUST 丢弃未知/重复 id 后作为当前隐藏集。`affixes` 缺省或 `null` MUST 逐项补 `UGIT_AFFIX_SPECS.visible` 默认值，`affixes[id] = null` MUST 布尔化回退 `true`。`extraRatios` 缺省 / `null` / 字符串 / `NaN` / `Infinity` / `<= 0` / `> 1` MUST 回退到 `UGIT_ZONE_SPECS[].ratio`。序列化 MUST 恒为 `JSON.stringify(normalizeLayout(config))`，读取 MUST 恒为 `JSON.parse` 后再过 `normalizeLayout`，保证生产者与消费者对字段名、枚举取值、可选性的理解一致。
+
 #### Scenario: 坏数据不白屏
 
 - **WHEN** `LAYOUT_KEY` 内容是不可解析的 JSON 或含未知分区 id

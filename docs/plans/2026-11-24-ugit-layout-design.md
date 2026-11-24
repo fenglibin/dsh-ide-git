@@ -350,6 +350,8 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 
 `normalizeLayout` 保证：未知/重复 id 丢弃、缺失 id 用 `UGIT_ZONE_SPECS` 默认值补齐、`activeTab` 非法回退 `'changes'`、`affixes` 逐项布尔化、`commitBoxPlace` 非法回退 `'changesBottom'`、`extraRatios` 夹到 `UGIT_ZONE_SPECS` 的 min/max 换算区间。
 
+**可选性契约（null 与缺省的区别，第 15 条）**：`normalizeLayout` 对 `hidden` 三种输入语义**不同且有意**：①字段缺省 / `null` / 非数组 → 规格默认隐藏集 `['branches','history']`；②`hidden: []`（空数组）→ 用户显式打开全部区，`hidden` 为空、`UgitBody` 把非候选列按"已打开"追加；③非空数组 → 丢弃未知/重复 id 后即当前隐藏集。`affixes`（`null`/缺省逐项补 `spec.visible`，`null` 字段按布尔化回退 `true`）、`extraRatios`（`null`/缺省/字符串/NaN/越界一律回退 `spec.ratio`）同理。写入恒 `JSON.stringify(normalizeLayout(config))`、读取恒 `JSON.parse` 后再 `normalizeLayout`，故生产者/消费者的字段名、枚举、可选性完全一致。该语义由 `tests/smoke.mjs` 的 `ugit layout config` 与 `ugit layout optionality` 断言钉住，防止漂移。
+
 **冲突消解（回答第 9 条「决策互相矛盾」）**：
 - `hidden[]`（全局）vs `UGIT_TABS[tab].zones`（每 Tab 候选）：**显隐优先**（1.2 已表态），Tab 只给候选、不覆盖用户的打开动作。
 - `tabs[*].order` vs 顶层 `order`：**Tab 级 order 优先**；顶层 `order` 仅作为「所有 Tab 统一顺序」的便捷覆盖，两者同时存在时取 `tabs[activeTab].order || order || 默认`。

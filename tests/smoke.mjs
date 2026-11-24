@@ -2742,3 +2742,32 @@ test('ugit affix zones are switchable and keyed columns render (v0.37.0)', () =>
   assert.match(client, /E\(Fragment, \{ key: 'zone-' \+ id \}/, 'each column is keyed')
   assert.match(client, /E\(Fragment, \{ key: 'gutter-' \+ id \}/, 'each gutter is keyed')
 })
+
+test('ugit layout optionality: absent, null and empty are different on purpose (v0.37.0)', () => {
+  // Contract pin (验收组第 15 条): null/缺省 → 规格默认隐藏集, [] → 用户显式
+  // 打开全部区. This is the "打开" action's persistence, not a silent fallback.
+  const start = client.indexOf('/* ============================== ugit layout ==============================')
+  const end = client.indexOf('/* ============================== dock actions ==============================')
+  const core = new Function('window', client.slice(start, end)
+    + '\nreturn { normalizeLayout: normalizeLayout, readLayout: readLayout, writeLayout: writeLayout, LAYOUT_KEY: LAYOUT_KEY }')(
+    { localStorage: { getItem: () => null, setItem: () => {} } })
+  const hiddenOf = (raw) => core.normalizeLayout(raw).hidden
+  assert.deepEqual(hiddenOf({}), ['branches', 'history'], 'absent hidden uses the spec default hide set')
+  assert.deepEqual(hiddenOf({ hidden: null }), ['branches', 'history'], 'null hidden uses the spec default hide set')
+  assert.deepEqual(hiddenOf({ hidden: 'nope' }), ['branches', 'history'], 'non-array hidden uses the spec default hide set')
+  assert.deepEqual(hiddenOf({ hidden: [] }), [], 'an empty array means the user opened every zone')
+  assert.deepEqual(hiddenOf({ hidden: ['changes', 'changes', 'nope'] }), ['changes'], 'unknown/duplicate ids are dropped')
+  // affixes / extraRatios null-vs-default
+  assert.equal(core.normalizeLayout({ affixes: { toolbar: null } }).affixes.toolbar, true, 'a null affix is coerced to its default true')
+  assert.deepEqual(core.normalizeLayout({ extraRatios: null }).extraRatios, { branches: 0.2, history: 0.34 }, 'null extraRatios falls back to spec ratios')
+  assert.deepEqual(core.normalizeLayout({ extraRatios: { branches: '0.5' } }).extraRatios, { branches: 0.2, history: 0.34 }, 'a string ratio is rejected, not coerced')
+  // Serialization is symmetric: write(JSON.stringify(normalize(x))) → read → normalize.
+  const store = new Map()
+  const io = new Function('window', client.slice(start, end)
+    + '\nreturn { readLayout: readLayout, writeLayout: writeLayout, normalizeLayout: normalizeLayout, LAYOUT_KEY: LAYOUT_KEY }')(
+    { localStorage: { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => { store.set(k, v) } } })
+  const wanted = io.normalizeLayout({ hidden: [], activeTab: 'workspace' })
+  io.writeLayout(wanted)
+  assert.deepEqual(io.readLayout(), wanted, 'write → JSON.stringify → read → normalize round-trips exactly')
+  assert.match(store.get(io.LAYOUT_KEY), /"version":2/, 'the persisted document carries the version field')
+})

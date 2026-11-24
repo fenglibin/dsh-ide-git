@@ -37,6 +37,8 @@
 
 **影响面**：`src/client.js` 新增约 120 行纯配置函数；`tests/smoke.mjs` 新增切片断言；无宿主改动。冲突消解（回答第 9 条）：`hidden[]`（全局）vs `UGIT_TABS[tab].zones` → **显隐优先**；`tabs[*].order` vs 顶层 `order` → **Tab 级优先**；`treeOpen`(PANES_KEY) vs `hidden.includes('dirTree')` → **hidden 优先**；`commitBox` 显隐 vs `showComposer` → `affixes.commitBox===false` 时一律不渲染。
 
+**可选性契约（null 与缺省的区别，验收组第 15 条）**：`normalizeLayout` 对 `hidden` 的三种输入有**不同且有意**的语义，不是静默 fallback：①`hidden` 字段**缺省**或值为 `null`/非数组 → 采用规格默认隐藏集 `['branches','history']`（规格里 `visible:false` 的区）；②`hidden: []`（空数组）→ **用户显式打开了全部区**，返回一个空 `hidden`，`UgitBody` 会把所有非候选列按"已打开"追加；③非空数组 → 逐项丢弃未知/重复 id 后作为用户当前隐藏集。同一规则适用于 `affixes`（`null`/缺省逐项补 `spec.visible` 默认，`[]`/`{}` 按字段补）、`extraRatios`（`null`/缺省补 `spec.ratio`，字符串/NaN/越界回退）。这是"打开"动作能跨刷新保持的关键，由 `tests/smoke.mjs` 的 `ugit layout config` + `ugit layout optionality` 两条断言钉住。序列化格式恒为 `JSON.stringify(normalizeLayout(config))`，读取恒 `JSON.parse` 后再过 `normalizeLayout`，因此写入方与读取方的字段名、枚举取值、可选性完全一致。
+
 ### D3 顶部 Tab 视图集与次要视图降级
 
 **选了什么**：新 `UgitTopbar` 取代旧 `topBar`(17282–17307) 的两条大搜索框；保留 `RepoSelect`(13258)、`openBranchSwitchMenu`(17278)、`dig-track`(17297–17299)、动作图标（取自 `RAIL_SPECS`）、设置齿轮、窗口控制（`dockFaceOf` 10393）；新增 `工作区 | 变更 | 历史` 分段 Tab。`activeTab` 默认 `'changes'`，写入 `LAYOUT_KEY.activeTab` 并刷新恢复。「历史」Tab 整块渲染 `historyPane`(17338)，「工作区」Tab 暴露 `WorktreesPane`(14974) 与 `BranchTree`(13382)。顶栏溢出按 `railCapacityOf`(17888) 收进「⋯ 更多」，不横向溢出。
