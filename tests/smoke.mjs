@@ -2619,7 +2619,7 @@ test('ugit layout config: normalizer is pure and bad localStorage never throws (
   const fallback = core.normalizeLayout(null)
   assert.equal(fallback.version, 2)
   assert.equal(fallback.activeTab, 'changes')
-  assert.deepEqual(fallback.hidden, ['branches', 'history'])
+  assert.deepEqual(fallback.hidden, [], 'default visibility comes from UGIT_TABS, not a pre-seeded hidden list')
   assert.equal(fallback.order, '')
   assert.deepEqual(fallback.affixes, { toolbar: true, iconRail: true, commitBox: true, commitBoxPlace: 'changesBottom' })
   for (const tab of core.UGIT_TAB_IDS) assert.equal(fallback.tabs[tab].order, '')
@@ -2731,10 +2731,13 @@ test('ugit layout optionality: absent, null and empty are different on purpose (
     + '\nreturn { normalizeLayout: normalizeLayout, readLayout: readLayout, writeLayout: writeLayout, LAYOUT_KEY: LAYOUT_KEY }')(
     { localStorage: { getItem: () => null, setItem: () => {} } })
   const hiddenOf = (raw) => core.normalizeLayout(raw).hidden
-  assert.deepEqual(hiddenOf({}), ['branches', 'history'], 'absent hidden uses the spec default hide set')
-  assert.deepEqual(hiddenOf({ hidden: null }), ['branches', 'history'], 'null hidden uses the spec default hide set')
-  assert.deepEqual(hiddenOf({ hidden: 'nope' }), ['branches', 'history'], 'non-array hidden uses the spec default hide set')
+  assert.deepEqual(hiddenOf({}), [], 'absent hidden means the user has explicitly closed nothing')
+  assert.deepEqual(hiddenOf({ hidden: null }), [], 'null hidden means the user has explicitly closed nothing')
+  assert.deepEqual(hiddenOf({ hidden: 'nope' }), [], 'non-array hidden means the user has explicitly closed nothing')
   assert.deepEqual(hiddenOf({ hidden: [] }), [], 'an empty array means the user opened every zone')
+  assert.deepEqual(hiddenOf({ hidden: ['branches', 'history'] }), [], 'a legacy document carrying only the old default set is migrated back to no explicit hides')
+  assert.deepEqual(hiddenOf({ hidden: ['changes'] }), ['changes'], 'a genuinely user-hidden column is kept')
+  assert.deepEqual(hiddenOf({ hidden: ['changes', 'branches'] }), ['changes', 'branches'], 'a mixed old/new list keeps all explicit hides')
   assert.deepEqual(hiddenOf({ hidden: ['changes', 'changes', 'nope'] }), ['changes'], 'unknown/duplicate ids are dropped')
   // affixes / extraRatios null-vs-default
   assert.equal(core.normalizeLayout({ affixes: { toolbar: null } }).affixes.toolbar, true, 'a null affix is coerced to its default true')
@@ -2749,4 +2752,29 @@ test('ugit layout optionality: absent, null and empty are different on purpose (
   io.writeLayout(wanted)
   assert.deepEqual(io.readLayout(), wanted, 'write → JSON.stringify → read → normalize round-trips exactly')
   assert.match(store.get(io.LAYOUT_KEY), /"version":2/, 'the persisted document carries the version field')
+})
+
+test('ugit tabs reach their core columns and legacy hidden docs migrate (v0.37.0)', () => {
+  // Deep self-check (真机复现): an earlier revision pre-seeded hidden with
+  // ['branches','history'], which made the 历史 tab render an empty "no diff"
+  // pane — the commit graph was unreachable. Now hidden records ONLY explicit
+  // user closes, and UGIT_TABS[activeTab].zones decides default visibility.
+  const start = client.indexOf('/* ============================== ugit layout ==============================')
+  const end = client.indexOf('/* ============================== dock actions ==============================')
+  const core = new Function('window', client.slice(start, end)
+    + '\nreturn { normalizeLayout: normalizeLayout, UGIT_TABS: UGIT_TABS, UGIT_TAB_IDS: UGIT_TAB_IDS }')(
+    { localStorage: { getItem: () => null, setItem: () => {} } })
+  assert.deepEqual(core.normalizeLayout(null).hidden, [], 'no zone is hidden by default')
+  assert.deepEqual(core.normalizeLayout({ hidden: ['branches', 'history'] }).hidden, [],
+    'a legacy document carrying only the old default set is migrated')
+  assert.deepEqual(core.normalizeLayout({ hidden: ['changes'] }).hidden, ['changes'],
+    'a genuine user hide is preserved')
+  assert.deepEqual(core.UGIT_TABS.changes.zones, ['dirTree', 'changes', 'diff'])
+  assert.deepEqual(core.UGIT_TABS.workspace.zones, ['branches', 'dirTree', 'changes', 'diff'],
+    'the workspace tab reaches the branch tree')
+  assert.deepEqual(core.UGIT_TABS.history.zones, ['history'],
+    'the history tab shows the commit graph without an empty diff column')
+  assert.match(client, /candidates\.indexOf\(id\) < 0\) return false/,
+    'UgitBody treats the tab candidate set as a hard boundary')
+  assert.match(client, /legacyDefault !== true/, 'the migration guard is present')
 })

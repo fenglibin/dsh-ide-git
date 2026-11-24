@@ -18,7 +18,7 @@ diff 列 MUST 常驻渲染 `fillDiff → DiffBody → LineDiff`，默认 `split:
 
 ### Requirement: 兼容类名与既有验证契约不回归
 
-替换 body 渲染后 MUST 保留 `dig-root`/`dig-topbar`/`dig-shell`/`dig-empty`、`dig-body-columns|stack|compact`、`.dig-pane-tree`/`.dig-pane-changes`/`.dig-pane-main`、`[data-pane]`、`dig-root-narrow`、`RAIL_VIEW_IDS`、`splitTabs`/`tabPane`、`fillDiff`/`diffPaneOf` 签名。`paneGeometry` 纯函数块 MUST 一字不改，其数值断言 MUST 全绿。
+替换 body 渲染后 MUST 保留 `dig-root`/`dig-topbar`/`dig-shell`/`dig-empty`、`dig-body-columns|stack|compact`、`.dig-pane-tree`/`.dig-pane-changes`/`.dig-pane-main`、`[data-pane]`、`dig-root-narrow`、`RAIL_VIEW_IDS`、`fillDiff`/`diffPaneOf` 签名。**`splitTabs`/`tabPane`/`diffActive`/`diffPane`/`diffGutter` 已删除**（旧 compact/stack tabbed diff 机制整体移除，三个 chrome 统一走 `UgitBody`），`tests/smoke.mjs` 中针对它们的旧断言已诚实改为等价断言。`paneGeometry` 纯函数块 MUST 一字不改，其数值断言 MUST 全绿。
 
 #### Scenario: SSR 自检与布局探针通过
 

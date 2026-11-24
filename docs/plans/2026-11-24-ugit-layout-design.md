@@ -139,7 +139,7 @@
 |---|---|---|---|---|
 | `changes`（默认） | `dirTree, changes, diff`（+ 显式打开的附加列） | 三者 | ugit 截图形态 | req/4、a/2 |
 | `workspace` | `branches, dirTree, changes, diff` | 四者 | 分支树 + `WorktreesPane`(14974) 入口 | a/2 |
-| `history` | `history, diff` | 二者 | 提交图谱 + 选中提交的文件差异/详情，复用 `historyPane`(17338) | a/2、req/3 |
+| `history` | `history` | 一者 | 提交图谱 / 提交详情（`view==='detail'` 时 `historyPane` 即 `CommitDetail` 含文件列表），点文件仍走既有 `showDiff`/右侧栏预览；diff 不占空列 | a/2、req/3 |
 
 优先级（0.5 已表态）：`UGIT_TABS[activeTab].zones` 给候选 → `hidden[]` 剔除 → 显式打开的附加列追加到尾部。
 
@@ -176,7 +176,7 @@
 | `.dig-pane-tree` / `.dig-pane-changes` / `.dig-pane-main` / `[data-pane]` | `panes-probe.mjs:156–164`、`selection-probe.mjs`、`smoke.mjs:1849–1860` 的 border-l2 选择器 | 已确证（CSS 18625–18629） |
 | `dig-root-narrow` 标记 | `smoke.mjs:1706–1708`、`panes-probe.mjs:266` | 已确证 |
 | `RAIL_VIEW_IDS` / `RAIL_SPECS` 五个视图动作 | `smoke.mjs:935`、`dock-probe.mjs` 的 `[data-action]` | 已确证（9886）；**动作条不删**，`renderRail` 改为收进顶栏/图标 rail |
-| `.dig-split-tabs` 的 tree 双向控件 | `smoke.mjs:918–929`、`dock-probe.mjs:264–284` | 已确证；**保留 `splitTabs` 与 `tabPane`**，只是不再由它承载 history/diff 切换（改由顶部 Tab），tree 控件照旧 |
+| `.dig-split-tabs` / `tabPane` | `smoke.mjs` 旧断言 | **已删除**（旧 compact/stack tabbed diff 机制整体移除）；`smoke.mjs` 的 tree-toggle 与 chrome 断言已诚实改为「UgitBody / 所有 chrome 共用」等价断言 |
 | `dig-tab-pane` / `dig-tab-pane-hidden` | `smoke.mjs:2351–2355` | 已确证；保留 `tabPane()` 的 `display:none` 保滚动位置手法 |
 | `diffPaneOf(fill)` 签名与 `paneStyle('diff')` | `smoke.mjs:2345/2372` | 已确证；保留 `fillDiff` 作为大 diff 的载体 |
 
@@ -350,7 +350,7 @@ PAINT_KEY    = sessionStorage，首屏缓存，与本次无关（附录 A 已确
 
 `normalizeLayout` 保证：未知/重复 id 丢弃、缺失 id 用 `UGIT_ZONE_SPECS` 默认值补齐、`activeTab` 非法回退 `'changes'`、`affixes` 逐项布尔化、`commitBoxPlace` 非法回退 `'changesBottom'`、`extraRatios` 夹到 `UGIT_ZONE_SPECS` 的 min/max 换算区间。
 
-**可选性契约（null 与缺省的区别，第 15 条）**：`normalizeLayout` 对 `hidden` 三种输入语义**不同且有意**：①字段缺省 / `null` / 非数组 → 规格默认隐藏集 `['branches','history']`；②`hidden: []`（空数组）→ 用户显式打开全部区，`hidden` 为空、`UgitBody` 把非候选列按"已打开"追加；③非空数组 → 丢弃未知/重复 id 后即当前隐藏集。`affixes`（`null`/缺省逐项补 `spec.visible`，`null` 字段按布尔化回退 `true`）、`extraRatios`（`null`/缺省/字符串/NaN/越界一律回退 `spec.ratio`）同理。写入恒 `JSON.stringify(normalizeLayout(config))`、读取恒 `JSON.parse` 后再 `normalizeLayout`，故生产者/消费者的字段名、枚举、可选性完全一致。该语义由 `tests/smoke.mjs` 的 `ugit layout config` 与 `ugit layout optionality` 断言钉住，防止漂移。
+**可选性契约（null 与缺省的区别，第 15 条；真机复现后修订）**：`normalizeLayout` 对 `hidden` 的语义是「**仅记录用户显式关闭的区**」：①字段缺省 / `null` / 非数组 / `[]` → 空隐藏集；②恰好等于旧版默认集 `['branches','history']` 的旧文档 → 迁移为 `[]`（关键修复：旧版把这两个区预置进 hidden，导致切到「历史」Tab 时提交图谱被永久挡住、面板只剩「没有可显示的文本差异」，a/2 与 req/3 失效，真机复现后修正）；③其它非空数组 → 丢弃未知/重复 id 后即当前显式隐藏集。**区在某 Tab 是否渲染由 `UGIT_TABS[activeTab].zones` 决定，不由 `hidden` 决定**（变更 Tab = 目录树/变更/diff，工作区 Tab 加分支树，历史 Tab = 提交图谱/详情，不含空 diff 列）。`affixes`（`null`/缺省逐项补 `spec.visible`）、`extraRatios`（`null`/缺省/字符串/NaN/越界回退 `spec.ratio`）同理。写入恒 `JSON.stringify(normalizeLayout(config))`、读取恒 `JSON.parse` 后再 `normalizeLayout`，生产者/消费者字段名、枚举、可选性一致。由 `tests/smoke.mjs` 的 `ugit layout config` / `ugit layout optionality` 断言钉住防漂移。
 
 **冲突消解（回答第 9 条「决策互相矛盾」）**：
 - `hidden[]`（全局）vs `UGIT_TABS[tab].zones`（每 Tab 候选）：**显隐优先**（1.2 已表态），Tab 只给候选、不覆盖用户的打开动作。

@@ -10915,7 +10915,10 @@ window.__ModuleLoader__.load({
     const UGIT_TABS = {
       changes: { zones: ['dirTree', 'changes', 'diff'] },
       workspace: { zones: ['branches', 'dirTree', 'changes', 'diff'] },
-      history: { zones: ['history', 'diff'] },
+      /* 提交图谱 / 提交详情由 `history` 区独占（`view==='detail'` 时
+         historyPane 就是 CommitDetail 含文件列表），不再并排一个空的 diff
+         列挤占空间；点提交详情里的文件仍走既有 showDiff/右侧栏预览。 */
+      history: { zones: ['history'] },
     }
     const UGIT_TAB_IDS = Object.keys(UGIT_TABS)
 
@@ -10926,19 +10929,25 @@ window.__ModuleLoader__.load({
       const source = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
       const hidden = []
       const seenHidden = new Set()
-      /* Spec-invisible zones start hidden. An empty (or absent) document must
-         still hide branches/history, otherwise the default "changes" tab would
-         show five columns and drown the diff. A stored list REPLACES this
-         default, so a user who opened those zones keeps them open. */
+      /* `hidden` means ONLY "the user explicitly closed this zone". The default
+         visibility of a zone comes from UGIT_TABS[activeTab].zones: branches is
+         a core column of the workspace tab, history of the history tab, and
+         neither is a candidate on the changes tab. Pre-seeding hidden with
+         branches/history (an earlier revision) made the history tab render an
+         empty "no diff" pane — the commit graph could never be reached, which
+         broke a/2 and req/3. Verified on a real instance; fixed here.
+         Migration: an old stored document whose hidden is exactly the previous
+         default set ['branches','history'] is treated as "not customised" and
+         normalised to [], so upgrade restores both tabs' core columns. */
       if (Array.isArray(source.hidden)) {
-        for (const id of source.hidden) {
-          if (typeof id !== 'string' || UGIT_ZONE_IDS.indexOf(id) < 0 || seenHidden.has(id)) continue
-          seenHidden.add(id)
-          hidden.push(id)
-        }
-      } else {
-        for (const spec of UGIT_ZONE_SPECS) {
-          if (spec.visible === false) { seenHidden.add(spec.id); hidden.push(spec.id) }
+        const stored = source.hidden.filter((id) => typeof id === 'string' && UGIT_ZONE_IDS.indexOf(id) >= 0)
+        const legacyDefault = stored.length === 2 && stored.indexOf('branches') >= 0 && stored.indexOf('history') >= 0
+        if (legacyDefault !== true) {
+          for (const id of stored) {
+            if (seenHidden.has(id)) continue
+            seenHidden.add(id)
+            hidden.push(id)
+          }
         }
       }
       const affixes = {}
@@ -13992,21 +14001,19 @@ window.__ModuleLoader__.load({
       const layout = props.layout
       const zones = typeof props.order === 'string' && props.order !== ''
         ? props.order.split(',') : UGIT_ZONE_IDS
-      /* A zone is shown when it is visible AND (it belongs to the active tab's
-         candidate set OR the user explicitly opened it — opening a zone in the
-         settings must append it to any tab, per the design's "显隐优先" rule). */
+      /* A zone renders when it (1) belongs to the active tab's candidate set,
+         (2) has not been explicitly hidden by the user, and (3) has a node.
+         The tab's candidate set is the hard boundary: the changes tab shows
+         目录树/变更/diff, the workspace tab adds the branch tree, the history
+         tab shows the commit graph + diff. `hidden` is the user's explicit
+         on/off switch (see UgitLayoutSettings), NOT a default visibility list —
+         that job belongs to UGIT_TABS, so switching tabs can always reach the
+         branch tree / commit graph (a/2, req/3). Verified on a real instance. */
       const candidates = props.candidates !== null && props.candidates !== undefined ? props.candidates : []
       const visible = zones.filter((id) => {
         if (UGIT_ZONE_IDS.indexOf(id) < 0) return false
+        if (candidates.indexOf(id) < 0) return false
         if (layout.hidden.indexOf(id) >= 0) return false
-        const inTab = candidates.indexOf(id) >= 0
-        // Only the spec-invisible zones (branches/history) can be "opened" on
-        // any tab: they start in hidden[], and removing them is the explicit
-        // open action. All other zones obey the tab's candidate set, so
-        // switching tabs cannot silently drag the changes/dirTree columns in.
-        const spec = UGIT_ZONE_SPECS.find((entry) => entry.id === id)
-        const opened = !inTab && spec !== undefined && spec.visible === false && layout.hidden.indexOf(id) < 0
-        if (!inTab && !opened) return false
         return props.nodes[id] !== null && props.nodes[id] !== undefined
       })
       if (visible.length === 0) {
@@ -18885,9 +18892,10 @@ window.__ModuleLoader__.load({
           changes: E('div', { className: 'dig-pane dig-pane-changes', 'data-pane': 'changes', style: paneStyle('changes') }, changesPane),
           /* 主角列：fillDiff（style 为 null、dig-diff-pane-fill 撑满），绝不套
              diffPaneOf(false) 的 paneStyle('diff') 55% 高度上限（设计 D1）。
-             historyPane 归 history 区/Tab，不塞进变更 Tab 的 diff 列。 */
+             没有 patch 时仍占住主角宽度（中性占位，不是错误文案），点开文件
+             即填充；「历史」Tab 的候选列不含 diff，所以它只显示提交图谱。 */
           diff: fillDiff === null
-            ? E('div', { className: 'dig-pane dig-pane-main' }, E('div', { className: 'dig-empty' }, t('diff.empty')))
+            ? E('div', { className: 'dig-pane dig-pane-main' }, E('div', { className: 'dig-empty' }, t('changes.title')))
             : E('div', { className: 'dig-pane dig-pane-main' }, fillDiff),
           branches: E('div', { className: 'dig-pane dig-pane-tree', 'data-pane': 'tree', style: paneStyle('tree') },
             E(BranchTree, { t: t, branches: branches, favorites: favorites, onCheckout: checkout, onBrowse: browseBranch, onBranchMenu: branchMenu, onDeleteEntries: deleteBranchEntries, onCopyValues: copyValues, onPicksChange: onBranchPicks, clearSignal: pickEpochs.tree })),
