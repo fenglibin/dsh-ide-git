@@ -2772,8 +2772,8 @@ test('ugit tabs reach their core columns and legacy hidden docs migrate (v0.37.0
   assert.deepEqual(core.UGIT_TABS.changes.zones, ['dirTree', 'changes', 'diff'])
   assert.deepEqual(core.UGIT_TABS.workspace.zones, ['branches', 'dirTree', 'changes', 'diff'],
     'the workspace tab reaches the branch tree')
-  assert.deepEqual(core.UGIT_TABS.history.zones, ['history'],
-    'the history tab shows the commit graph without an empty diff column')
+  assert.deepEqual(core.UGIT_TABS.history.zones, ['history', 'diff'],
+    'the history tab shows the graph/list plus a diff column for the picked commit file (ugit 布局, 用户要求)')
   assert.match(client, /candidates\.indexOf\(id\) < 0\) return false/,
     'UgitBody treats the tab candidate set as a hard boundary')
   assert.match(client, /legacyDefault !== true/, 'the migration guard is present')
@@ -2818,4 +2818,20 @@ test('follow-up UX fixes: no composer pill, tabbed settings, prefs-only split, u
   assert.match(client, /changes: \(\) => gutter\('tree', 'prev'\)/, 'the dirTree|changes divider resizes the tree column')
   assert.match(client, /diff: \(\) => gutter\('changes', 'prev'\)/, 'the changes|diff divider resizes the changes column')
   assert.doesNotMatch(client, /gutter\('changes', 'next'\)/, 'no reversed-side gutter remains')
+})
+
+test('history detail split view + mode-only badge (v0.37.2)', () => {
+  // 参考 ugit 截图2/3: 点提交 → 提交列表保持可见，右侧是详情面板；
+  // 点详情里的文件 → diff 列显示该文件 patch。
+  assert.match(client, /className: 'dig-history-split'/, 'the history detail view keeps the commit list visible')
+  assert.match(client, /className: 'dig-history-split-list'/, 'the left column is the commit list')
+  assert.match(client, /history: \{ zones: \['history', 'diff'\] \}/, 'the history tab includes the diff column')
+  assert.match(client, /onSelectFile: \(file\) => \{ setSelectedPath\(file\.path\); showDiff\(/,
+    'a single click on a detail file opens its diff in the diff column')
+  // 纯权限(mode)变更: numstat 0/0, 必须显示中性徽标而不是空着。
+  assert.match(client, /className: 'dig-stat-mode'/, 'mode-only files carry a neutral badge')
+  assert.match(client, /t\('changes\.modeOnly'\)/, 'the badge uses a dictionary key')
+  assert.equal(client.indexOf("'changes.modeOnly': '权限'") > 0, true, 'the zh dictionary defines it')
+  const locales = (client.match(/'changes\.modeOnly': '/g) || []).length
+  assert.equal(locales, 21, 'all 21 dictionaries define changes.modeOnly')
 })

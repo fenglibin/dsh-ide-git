@@ -523,6 +523,7 @@ window.__ModuleLoader__.load({
       'counts.ignored': '忽略 {n}',
       'counts.unstaged': '更改 {n}',
       'counts.untracked': '未跟踪 {n}',
+      'changes.modeOnly': '权限',
       'counts.conflicted': '冲突 {n}',
       'push.confirm': '将 {branch} 推送到 {upstream}?',
       'push.confirmMany': "将推送 {n} 个分支:{names}。确定?",
@@ -977,6 +978,7 @@ window.__ModuleLoader__.load({
       'counts.ignored': 'Ignored {n}',
       'counts.unstaged': 'Changes {n}',
       'counts.untracked': 'Untracked {n}',
+      'changes.modeOnly': 'mode',
       'counts.conflicted': 'Conflicts {n}',
       'push.confirm': 'Push {branch} to {upstream}?',
       'push.confirmMany': "Push {n} branch(es): {names}?",
@@ -1439,6 +1441,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': '已忽略 {n}',
         'counts.unstaged': '變更 {n}',
         'counts.untracked': '未追蹤 {n}',
+        'changes.modeOnly': '權限',
         'counts.conflicted': '衝突 {n}',
         'push.confirm': '將 {branch} 推送到 {upstream}?',
         'push.confirmMany': "將推送 {n} 個分支:{names}。確定?",
@@ -1893,6 +1896,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': '已忽略 {n}',
         'counts.unstaged': '變更 {n}',
         'counts.untracked': '未追蹤 {n}',
+        'changes.modeOnly': '權限',
         'counts.conflicted': '衝突 {n}',
         'push.confirm': '將 {branch} 推送到 {upstream}?',
         'push.confirmMany': "將推送 {n} 個分支:{names}。確定?",
@@ -2347,6 +2351,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': '已忽略 {n}',
         'counts.unstaged': '變更 {n}',
         'counts.untracked': '未追蹤 {n}',
+        'changes.modeOnly': '権限',
         'counts.conflicted': '衝突 {n}',
         'push.confirm': '將 {branch} 推送到 {upstream}?',
         'push.confirmMany': "將推送 {n} 個分支:{names}。確定?",
@@ -2801,6 +2806,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': '無視 {n}',
         'counts.unstaged': '変更 {n}',
         'counts.untracked': '未追跡 {n}',
+        'changes.modeOnly': '권한',
         'counts.conflicted': '競合 {n}',
         'push.confirm': '{branch} を {upstream} にプッシュしますか?',
         'push.confirmMany': "{n} 個のブランチをプッシュします:{names}。よろしいですか?",
@@ -3255,6 +3261,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': '무시됨 {n}',
         'counts.unstaged': '변경 {n}',
         'counts.untracked': '추적되지 않음 {n}',
+        'changes.modeOnly': 'Modus',
         'counts.conflicted': '충돌 {n}',
         'push.confirm': '{branch}을(를) {upstream}에 푸시할까요?',
         'push.confirmMany': "{n}개 브랜치를 푸시합니다: {names}. 확입니까?",
@@ -3709,6 +3716,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Ignoriert {n}',
         'counts.unstaged': 'Änderungen {n}',
         'counts.untracked': 'Nicht verfolgt {n}',
+        'changes.modeOnly': 'mode',
         'counts.conflicted': 'Konflikte {n}',
         'push.confirm': '{branch} nach {upstream} pushen?',
         'push.confirmMany': "{n} Branch(es) pushen: {names}?",
@@ -4163,6 +4171,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Ignoré {n}',
         'counts.unstaged': 'Modifications {n}',
         'counts.untracked': 'Non suivi {n}',
+        'changes.modeOnly': 'mode',
         'counts.conflicted': 'Conflits {n}',
         'push.confirm': 'Pousser {branch} vers {upstream} ?',
         'push.confirmMany': "Pousser {n} branche(s) : {names} ?",
@@ -4617,6 +4626,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Игнорируется {n}',
         'counts.unstaged': 'Изменения {n}',
         'counts.untracked': 'Не отслеживается {n}',
+        'changes.modeOnly': 'modus',
         'counts.conflicted': 'Конфликты {n}',
         'push.confirm': 'Отправить {branch} в {upstream}?',
         'push.confirmMany': "Отправить ветки ({n}): {names}?",
@@ -5071,6 +5081,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Ignorado {n}',
         'counts.unstaged': 'Alterações {n}',
         'counts.untracked': 'Não rastreado {n}',
+        'changes.modeOnly': 'modo',
         'counts.conflicted': 'Conflitos {n}',
         'push.confirm': 'Enviar {branch} para {upstream}?',
         'push.confirmMany': "Enviar {n} branch(es): {names}?",
@@ -5525,6 +5536,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Ignorati {n}',
         'counts.unstaged': 'Modifiche {n}',
         'counts.untracked': 'Non tracciati {n}',
+        'changes.modeOnly': 'modus',
         'counts.conflicted': 'Conflitti {n}',
         'push.confirm': 'Inviare {branch} a {upstream}?',
         'push.confirmMany': "Eseguire il push di {n} branch: {names}?",
@@ -5979,6 +5991,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Genegeerd {n}',
         'counts.unstaged': 'Wijzigingen {n}',
         'counts.untracked': 'Niet gevolgd {n}',
+        'changes.modeOnly': 'läge',
         'counts.conflicted': 'Conflicten {n}',
         'push.confirm': '{branch} naar {upstream} pushen?',
         'push.confirmMany': "{n} branch(es) pushen: {names}?",
@@ -6433,6 +6446,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Ignorowane {n}',
         'counts.unstaged': 'Zmiany {n}',
         'counts.untracked': 'Nieśledzone {n}',
+        'changes.modeOnly': 'mod',
         'counts.conflicted': 'Konflikty {n}',
         'push.confirm': 'Wypchnąć {branch} do {upstream}?',
         'push.confirmMany': "Wysłać gałęzie ({n}): {names}?",
@@ -6887,6 +6901,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Ignorerade {n}',
         'counts.unstaged': 'Ändringar {n}',
         'counts.untracked': 'Ospårade {n}',
+        'changes.modeOnly': 'mode',
         'counts.conflicted': 'Konflikter {n}',
         'push.confirm': 'Pusha {branch} till {upstream}?',
         'push.confirmMany': "Pusha {n} gren(ar): {names}?",
@@ -7341,6 +7356,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Yok sayılan {n}',
         'counts.unstaged': 'Değişiklikler {n}',
         'counts.untracked': 'İzlenmeyen {n}',
+        'changes.modeOnly': 'وضع',
         'counts.conflicted': 'Çakışmalar {n}',
         'push.confirm': '{branch} dalı {upstream} deposuna gönderilsin mi?',
         'push.confirmMany': "{n} dal gönderilecek: {names}. Emin misiniz?",
@@ -7795,6 +7811,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Diabaikan {n}',
         'counts.unstaged': 'Perubahan {n}',
         'counts.untracked': 'Tidak terlacak {n}',
+        'changes.modeOnly': 'मोड',
         'counts.conflicted': 'Konflik {n}',
         'push.confirm': 'Push {branch} ke {upstream}?',
         'push.confirmMany': "Push {n} branch: {names}?",
@@ -8249,6 +8266,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'Bị bỏ qua {n}',
         'counts.unstaged': 'Thay đổi {n}',
         'counts.untracked': 'Chưa theo dõi {n}',
+        'changes.modeOnly': 'โหมด',
         'counts.conflicted': 'Xung đột {n}',
         'push.confirm': 'Push {branch} lên {upstream}?',
         'push.confirmMany': "Push {n} nhánh: {names}?",
@@ -8703,6 +8721,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'متجاهَل {n}',
         'counts.unstaged': 'التغييرات {n}',
         'counts.untracked': 'غير متعقَّب {n}',
+        'changes.modeOnly': 'mod',
         'counts.conflicted': 'التعارضات {n}',
         'push.confirm': 'دفع {branch} إلى {upstream}?',
         'push.confirmMany': "دفع {n} فروع: {names}؟",
@@ -9157,6 +9176,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'अनदेखा {n}',
         'counts.unstaged': 'परिवर्तन {n}',
         'counts.untracked': 'अनट्रैक्ड {n}',
+        'changes.modeOnly': 'mode',
         'counts.conflicted': 'टकराव {n}',
         'push.confirm': '{branch} को {upstream} पर पुश करें?',
         'push.confirmMany': "{n} शाखाएँ पुश करें: {names}?",
@@ -9611,6 +9631,7 @@ window.__ModuleLoader__.load({
         'counts.ignored': 'เพิกเฉย {n}',
         'counts.unstaged': 'การเปลี่ยนแปลง {n}',
         'counts.untracked': 'ไม่ถูกติดตาม {n}',
+        'changes.modeOnly': 'mode',
         'counts.conflicted': 'ความขัดแย้ง {n}',
         'push.confirm': 'พุช {branch} ไปที่ {upstream}?',
         'push.confirmMany': "จะ Push {n} สาขา: {names} ใช่หรือไม่?",
@@ -10915,10 +10936,10 @@ window.__ModuleLoader__.load({
     const UGIT_TABS = {
       changes: { zones: ['dirTree', 'changes', 'diff'] },
       workspace: { zones: ['branches', 'dirTree', 'changes', 'diff'] },
-      /* 提交图谱 / 提交详情由 `history` 区独占（`view==='detail'` 时
-         historyPane 就是 CommitDetail 含文件列表），不再并排一个空的 diff
-         列挤占空间；点提交详情里的文件仍走既有 showDiff/右侧栏预览。 */
-      history: { zones: ['history'] },
+      /* 提交图谱 | 提交详情/文件列表 | 该提交内文件的 diff（参考 ugit 的
+         历史 Tab）：点提交 → 右侧详情面板；点详情里的文件 → diff 列展示
+         该文件 patch。 */
+      history: { zones: ['history', 'diff'] },
     }
     const UGIT_TAB_IDS = Object.keys(UGIT_TABS)
 
@@ -14640,8 +14661,14 @@ window.__ModuleLoader__.load({
         // repeating the full path at the end of every nested row is what made
         // the tree read as a flat list (v0.18.5). Flat modes keep it.
         depth >= 0 ? null : E('span', { className: 'dig-row-sub dig-row-dir' }, item.path.slice(-1) === '/' ? '' : dirName(item.path)),
+        /* 纯权限(mode)变更的文件 numstat 报 0/0 —— 此前什么都不显示，用户
+           把它误读成「行数丢了」。有 ± 显示 ±；确有变更但 ± 全 0 时显示
+           中性「权限」徽标（21 门键 changes.modeOnly）。 */
         item.additions > 0 ? E('span', { className: 'dig-stat-add' }, '+' + item.additions) : null,
         item.deletions > 0 ? E('span', { className: 'dig-stat-del' }, '-' + item.deletions) : null,
+        item.additions === 0 && item.deletions === 0 && item.binary !== true && (props.group === 'staged' || props.group === 'unstaged')
+          ? E('span', { className: 'dig-stat-mode' }, t('changes.modeOnly'))
+          : null,
         readOnly ? null : (props.group === 'staged'
           ? E('button', { type: 'button', className: 'dig-mini', title: t('action.unstage'), onClick: (event) => { event.stopPropagation(); props.onUnstage(item) } }, E(Icon, { name: 'minus', size: 12 }))
           : E('button', { type: 'button', className: 'dig-mini', title: t('action.stage'), onClick: (event) => { event.stopPropagation(); props.onStage(item) } }, E(Icon, { name: 'plus', size: 12 }))),
@@ -15879,7 +15906,10 @@ window.__ModuleLoader__.load({
             E('span', { className: 'dig-row-label' }, baseName(file.path)),
             E('span', { className: 'dig-row-sub dig-row-dir' }, dirName(file.path)),
             file.additions > 0 ? E('span', { className: 'dig-stat-add' }, '+' + file.additions) : null,
-            file.deletions > 0 ? E('span', { className: 'dig-stat-del' }, '-' + file.deletions) : null))))
+            file.deletions > 0 ? E('span', { className: 'dig-stat-del' }, '-' + file.deletions) : null,
+            file.additions === 0 && file.deletions === 0 && file.binary !== true
+              ? E('span', { className: 'dig-stat-mode' }, t('changes.modeOnly'))
+              : null))))
     }
 
     /* Worktrees view (v0.22.0): the repository's real working trees, read from
@@ -18278,23 +18308,44 @@ window.__ModuleLoader__.load({
         E('button', { type: 'button', className: 'dig-link', onClick: () => setNote(null) }, t('error.dismiss')))
 
 
+      /* 历史 Tab 参照 ugit：点提交后提交列表保持可见（左），右侧是详情
+         面板；详情里的文件单击/双击都在 diff 列打开该文件的 patch。 */
       const historyPane = view === 'detail'
-        ? E(CommitDetail, {
-            t: t, detail: detail, selectedPath: selectedPath,
-            onBack: () => { setView('history'); setSelectedPath(null); resetDiff() },
-            /* Plain click only highlights the file; the DOUBLE-click opens its
-               diff (v0.18.3, one click model across every list). */
-            onSelectFile: (file) => { setSelectedPath(file.path) },
-            onOpenFile: (file) => {
-              setSelectedPath(file.path)
-              showDiff({
-                hash: detail === null || detail === undefined ? undefined : detail.hash,
-                subject: detail === null || detail === undefined ? '' : detail.subject,
-                path: file.path,
-              })
-            },
-            onFileMenu: detailFileMenu,
-          })
+        ? E('div', { className: 'dig-history-split' },
+            E('div', { className: 'dig-history-split-list' },
+              E(HistoryList, {
+                t: t, commits: commits, commitsLoaded: commitsLoaded, hasMore: hasMore, busy: busy, selectedHash: selectedHash,
+                dateFormat: readDateFormat(),
+                hideSearch: compact, pathFilter: pathFilter, openMenuAt: openMenuAt,
+                branches: branches, scope: browseRev, onScopeChange: setHistoryScope,
+                onPathFilter: (value) => setPathFilter(value),
+                onSelect: (commit) => { void selectCommit(commit) },
+                onMenu: commitMenu,
+                onLoadMore: () => { void guard(() => loadCommits(commits.length)) },
+                pickedHashes: pickedCommits,
+                onPicksChange: onCommitPicks,
+                onSelectAll: (hashes) => onCommitPicks(new Set(hashes)),
+                onKeyDown: onHistoryKeyDown,
+                mergeAnchor: mergeAnchor,
+                base: base,
+                request: request,
+              })),
+            E(CommitDetail, {
+              t: t, detail: detail, selectedPath: selectedPath,
+              onBack: () => { setView('history'); setSelectedPath(null); resetDiff() },
+              /* 单击与双击都在 diff 列打开该文件的 patch（ugit 的点击
+                 模型：文件列表是 diff 的目录，不需要先选中再看）。 */
+              onSelectFile: (file) => { setSelectedPath(file.path); showDiff({ hash: detail === null || detail === undefined ? undefined : detail.hash, subject: detail === null || detail === undefined ? '' : detail.subject, path: file.path }) },
+              onOpenFile: (file) => {
+                setSelectedPath(file.path)
+                showDiff({
+                  hash: detail === null || detail === undefined ? undefined : detail.hash,
+                  subject: detail === null || detail === undefined ? '' : detail.subject,
+                  path: file.path,
+                })
+              },
+              onFileMenu: detailFileMenu,
+            }))
         : E(HistoryList, {
             t: t, commits: commits, commitsLoaded: commitsLoaded, hasMore: hasMore, busy: busy, selectedHash: selectedHash,
             /* Read per render: the row Config subscription re-renders this
@@ -19736,6 +19787,10 @@ window.__ModuleLoader__.load({
          against this wrapper — the scroll container below is offset by the
          filter bar, and painting from the wrong rect was the v0.19.2 drift. */
       '.dig-history{display:flex;flex-direction:column;min-height:0;flex:1;position:relative}',
+      /* 历史 Tab 点提交后的左右布局：提交列表保持可见（参考截图2）。 */
+      '.dig-history-split{display:flex;min-height:0;flex:1;gap:8px}',
+      '.dig-history-split-list{width:min(46%,420px);min-width:220px;flex:none;min-height:0;display:flex;flex-direction:column}',
+      '.dig-history-split .dig-detail{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:auto}',
       '.dig-history-scroll{flex:1;overflow:auto}',
       // The row's left edge follows the bars above it (filter row / compact
       // switch: 4px 6px padding), so the time column and the graph start on the
@@ -19844,6 +19899,8 @@ window.__ModuleLoader__.load({
       '.dig-file-status-I{color:var(--dsw-alias-label-tertiary)}',
       '.dig-stat-add{color:var(--dsw-alias-state-success-primary);flex:none;font-variant-numeric:tabular-nums}',
       '.dig-stat-del{color:var(--dsw-alias-state-error-primary);flex:none;font-variant-numeric:tabular-nums}',
+      /* 纯权限(mode)变更的中性徽标：numstat 0/0 但确有变更，不能不显示。 */
+      '.dig-stat-mode{color:var(--dsw-alias-label-secondary);flex:none;font-size:10px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-xs,4px);padding:0 4px;line-height:14px}',
       '.dig-mini{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border:none;border-radius:var(--dsw-radius-xs,4px);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;opacity:0;flex:none;padding:0}',
       '.dig-row:hover .dig-mini{opacity:1}',
       '.dig-mini:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
