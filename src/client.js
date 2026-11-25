@@ -14813,7 +14813,9 @@ window.__ModuleLoader__.load({
         // In dir-grouped mode the folder head already names the directory —
         // repeating the full path at the end of every nested row is what made
         // the tree read as a flat list (v0.18.5). Flat modes keep it.
-        depth >= 0 ? null : E('span', { className: 'dig-row-sub dig-row-dir' }, item.path.slice(-1) === '/' ? '' : dirName(item.path)),
+        // ugit 扁平模式 (hideDir) 整段去掉目录：行 title 已含全路径，悬停
+        // 可读，省出的宽度全部让给文件名（用户要求）。
+        (props.hideDir === true || depth >= 0) ? null : E('span', { className: 'dig-row-sub dig-row-dir' }, item.path.slice(-1) === '/' ? '' : dirName(item.path)),
         /* 纯权限(mode)变更的文件 numstat 报 0/0 —— 此前什么都不显示，用户
            把它误读成「行数丢了」。有 ± 显示 ±；确有变更但 ± 全 0 时显示
            中性「权限」徽标（21 门键 changes.modeOnly）。 */
@@ -14826,7 +14828,7 @@ window.__ModuleLoader__.load({
           ? E('button', { type: 'button', className: 'dig-mini', title: t('action.unstage'), onClick: (event) => { event.stopPropagation(); props.onUnstage(item) } }, E(Icon, { name: 'minus', size: 12 }))
           : E('button', { type: 'button', className: 'dig-mini', title: t('action.stage'), onClick: (event) => { event.stopPropagation(); props.onStage(item) } }, E(Icon, { name: 'plus', size: 12 }))),
         readOnly ? null : E('button', { type: 'button', className: 'dig-mini', title: t('action.discard'), onClick: (event) => { event.stopPropagation(); props.onDiscard(item, props.group) } }, E(Icon, { name: 'undo', size: 12 })))
-    }, (prev, next) => prev.item === next.item && prev.group === next.group && prev.t === next.t && prev.selected === next.selected && prev.depth === next.depth)
+    }, (prev, next) => prev.item === next.item && prev.group === next.group && prev.t === next.t && prev.selected === next.selected && prev.depth === next.depth && prev.hideDir === next.hideDir)
 
     function ChangesPanel(props) {
       const t = props.t
@@ -15014,6 +15016,8 @@ window.__ModuleLoader__.load({
       const entryRow = (key, item, depth) => E(ChangeRow, {
         key: key + ':' + item.path, item: item, group: key, t: t,
         depth: typeof depth === 'number' ? depth : -1,
+        /* ugit 扁平模式隐藏目录段，把宽度让给文件名（行 title 悬停仍有全路径）。 */
+        hideDir: props.ugitFlat === true,
         selected: selection.has(key + ':' + item.path) === true,
         onRowClick: handleRowClick,
         onDblClick: props.onDiff,
@@ -15163,7 +15167,7 @@ window.__ModuleLoader__.load({
                 node: E('div', { className: 'dig-row dig-row-file dig-row-pending', title: path, onClick: (event) => { if (typeof props.onDiff === 'function') props.onDiff({ path: path }, 'pending') } },
                   E('span', { className: 'dig-row-icon dig-tone-accent' }, E(Icon, { name: 'inbox', size: 12 })),
                   E('span', { className: 'dig-row-label' }, baseName(path)),
-                  E('span', { className: 'dig-row-sub dig-row-dir' }, dirName(path)),
+                  /* 目录段与普通变更行同策略去掉：行 title 悬停有全路径。 */
                   E('button', {
                     type: 'button', className: 'dig-mini', title: t('menu.pendRemove'),
                     onClick: (event) => { event.stopPropagation(); if (typeof props.onPendingRemove === 'function') props.onPendingRemove(path) },

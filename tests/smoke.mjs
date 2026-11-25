@@ -2853,3 +2853,12 @@ test('history progressive columns + outside-file sink + pending area (v0.37.3)',
   assert.equal((client.match(/'changes\.pending': '/g) || []).length, 21, 'all 21 dictionaries define changes.pending')
   assert.equal((client.match(/'menu\.pendAdd': '/g) || []).length, 21, 'all 21 dictionaries define menu.pendAdd')
 })
+
+test('flat change rows hide the directory segment (v0.37.4)', () => {
+  // 用户要求: 变更列表只显示文件名(+状态+±统计), 不显示路径段 —— 行 title
+  // 悬停已有全路径, 省出的宽度全部让给文件名。
+  assert.match(client, /hideDir: props\.ugitFlat === true/, 'the ugit flat list asks rows to hide the directory segment')
+  assert.match(client, /\(props\.hideDir === true \|\| depth >= 0\) \? null : E\('span', \{ className: 'dig-row-sub dig-row-dir' \}/, 'ChangeRow drops the dir segment when asked')
+  assert.match(client, /prev\.hideDir === next\.hideDir/, 'the ChangeRow memo reacts to hideDir flips')
+  assert.doesNotMatch(client, /E\('span', \{ className: 'dig-row-label' \}, baseName\(path\)\),[\s\S]{0,80}dig-row-dir/, 'pending rows have no dir segment either')
+})
