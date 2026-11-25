@@ -2894,3 +2894,20 @@ test('multi-select is actually usable in the flat changes list (v0.37.6)', () =>
   // 选中多个后右键任意行都作用于整组。
   assert.match(client, /if \(changeSelection\.size > 1\) \{/, 'a multi-selection right-click acts on the whole set')
 })
+
+test('no stats flicker on refresh; manual refresh only (v0.37.7)', () => {
+  // 用户报告: 自动刷新时列表先闪一片「权限」再变回真实 +/-。根因是两阶段
+  // 骨架(statsDeferred)的 0/0 触发了 mode-only 徽标。三层修复:
+  // 1) deferred 帧不渲染任何 0/0 徽标。
+  assert.match(client, /const statsDeferred = props\.statsDeferred === true/, 'ChangeRow knows the deferred phase')
+  assert.match(client, /statsDeferred !== true && item\.additions === 0/, 'the mode-only badge is suppressed during the deferred first frame')
+  assert.match(client, /statsDeferred: props\.summary/, 'ChangesPanel passes the flag down')
+  // 2) 骨架帧沿用上一份真实统计, 列表视觉不变直到 stats 整体替换。
+  assert.match(client, /if \(lastStatsRef\.current === null && data\.statsDeferred === true\)/, 'the skeleton frame is only painted on first load')
+  assert.match(client, /const merged = applyStats\(data, statsPayload\)/, 'stats are merged into one atomic replacement')
+  assert.match(client, /lastStatsRef\.current = merged/, 'the completed summary gates the next refresh')
+  // 3) 12s 自动刷新移除: 左侧手动刷新按钮保留。
+  assert.doesNotMatch(client, /AUTO_REFRESH_MS/, 'the auto-refresh interval constant is gone')
+  assert.doesNotMatch(client, /setInterval\(\(\) => \{[\s\S]{0,400}loadSummary\(\)/, 'no 12s poll redraws the list')
+  assert.match(client, /fetchRemote === true/, 'the manual refresh button still works')
+})

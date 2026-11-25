@@ -69,7 +69,6 @@ window.__ModuleLoader__.load({
        wider than the panel and shoved the subject column out of view. */
     const GRAPH_MAX_LANES = 7
     const LANE_COLORS = ['#4d6bfe', '#e2a03f', '#3fb950', '#d2679b', '#59b0d6', '#b083f0', '#d2694a', '#8a9aa8']
-    const AUTO_REFRESH_MS = 12000
     /* The load trace stays invisible through a normal local round-trip and
        only materialises once a phase has outlived this budget. It then polls
        the host's active-git registry once a second: a named command proves
@@ -14786,6 +14785,9 @@ window.__ModuleLoader__.load({
     const ChangeRow = memo(function ChangeRow(props) {
       const t = props.t
       const item = props.item
+      /* 两阶段加载的第一帧（statsDeferred）统计尚未回来，不渲染任何 0/0
+         徽标，避免刷新时闪一片「权限」。 */
+      const statsDeferred = props.statsDeferred === true
       const raw = item.index === '?' ? '?' : (item.index + item.worktree).trim()
       // Ignored rows are informational: their status letter is their own, and the
       // stage/discard buttons below would silently do nothing (git needs -f).
@@ -14818,17 +14820,20 @@ window.__ModuleLoader__.load({
         (props.hideDir === true || depth >= 0) ? null : E('span', { className: 'dig-row-sub dig-row-dir' }, item.path.slice(-1) === '/' ? '' : dirName(item.path)),
         /* 纯权限(mode)变更的文件 numstat 报 0/0 —— 此前什么都不显示，用户
            把它误读成「行数丢了」。有 ± 显示 ±；确有变更但 ± 全 0 时显示
-           中性「权限」徽标（21 门键 changes.modeOnly）。 */
+           中性「权限」徽标（21 门键 changes.modeOnly）。
+           关键：statsDeferred（两阶段加载的第一帧骨架，统计尚未回来）时
+           不显示任何 0/0 徽标 —— 否则每次刷新都会先闪一片「权限」再变回
+           真实数字（用户报告）。骨架阶段沿用旧数字由 loadSummary 合并保证。 */
         item.additions > 0 ? E('span', { className: 'dig-stat-add' }, '+' + item.additions) : null,
         item.deletions > 0 ? E('span', { className: 'dig-stat-del' }, '-' + item.deletions) : null,
-        item.additions === 0 && item.deletions === 0 && item.binary !== true && (props.group === 'staged' || props.group === 'unstaged')
+        statsDeferred !== true && item.additions === 0 && item.deletions === 0 && item.binary !== true && (props.group === 'staged' || props.group === 'unstaged')
           ? E('span', { className: 'dig-stat-mode' }, t('changes.modeOnly'))
           : null,
         readOnly ? null : (props.group === 'staged'
           ? E('button', { type: 'button', className: 'dig-mini', title: t('action.unstage'), onClick: (event) => { event.stopPropagation(); props.onUnstage(item) } }, E(Icon, { name: 'minus', size: 12 }))
           : E('button', { type: 'button', className: 'dig-mini', title: t('action.stage'), onClick: (event) => { event.stopPropagation(); props.onStage(item) } }, E(Icon, { name: 'plus', size: 12 }))),
         readOnly ? null : E('button', { type: 'button', className: 'dig-mini', title: t('action.discard'), onClick: (event) => { event.stopPropagation(); props.onDiscard(item, props.group) } }, E(Icon, { name: 'undo', size: 12 })))
-    }, (prev, next) => prev.item === next.item && prev.group === next.group && prev.t === next.t && prev.selected === next.selected && prev.depth === next.depth && prev.hideDir === next.hideDir)
+    }, (prev, next) => prev.item === next.item && prev.group === next.group && prev.t === next.t && prev.selected === next.selected && prev.depth === next.depth && prev.hideDir === next.hideDir && prev.statsDeferred === next.statsDeferred)
 
     function ChangesPanel(props) {
       const t = props.t
@@ -15020,6 +15025,7 @@ window.__ModuleLoader__.load({
         depth: typeof depth === 'number' ? depth : -1,
         /* ugit 扁平模式隐藏目录段，把宽度让给文件名（行 title 悬停仍有全路径）。 */
         hideDir: props.ugitFlat === true,
+        statsDeferred: props.summary !== null && props.summary !== undefined && props.summary.statsDeferred === true,
         selected: selection.has(key + ':' + item.path) === true,
         onRowClick: handleRowClick,
         onDblClick: props.onDiff,
@@ -16290,6 +16296,9 @@ window.__ModuleLoader__.load({
       const [repoState, setRepoState] = useState(null)
       const [repoRoot, setRepoRoot] = useState(null)
       const [summary, setSummary] = useState(null)
+      /* 两阶段刷新时保留上一份已完成的统计：骨架帧按 group:path 沿用旧的
+         +/-，直到 stats 回来整体替换 —— 列表在刷新过程中「不变」（用户要求）。 */
+      const lastStatsRef = useRef(null)
       // Ignored files are opt-in: --ignored walks the ignore rules, and nobody
       // needs node_modules listed while they are writing a commit message.
       const [showIgnored, setShowIgnored] = useState(false)
@@ -16912,17 +16921,29 @@ window.__ModuleLoader__.load({
         if (phase !== null) phase('summary', 'active')
         try {
           const data = await request('summary', Object.assign({}, base, { ignored: showIgnored, stats: false }))
-          setSummary(data)
+          /* 用户要求：刷新时列表不变，等真正的新结果回来再一次性替换。
+             已有旧列表（lastStatsRef 有值）时，骨架帧完全不 setSummary ——
+             列表保持原样直到 stats 回来后原子替换；仅首屏（无旧数据、本来
+             就没有列表可闪）才两阶段先出行。 */
+          if (lastStatsRef.current === null && data.statsDeferred === true) {
+            setSummary(data)
+          }
           summaryDone = true
           if (phase !== null) phase('summary', 'done')
           if (data.statsDeferred === true) {
             if (phase !== null) phase('stats', 'active')
-            const merged = applyStats(data, await request('stats', base))
+            const statsPayload = await request('stats', base)
+            /* 骨架里没有旧统计可沿用（原子替换路径），用上一份完整 summary
+               给 applyStats 当底，保证新列表带着精确数字一次性落地。 */
+            const merged = applyStats(data, statsPayload)
+            lastStatsRef.current = merged
             setSummary(merged)
             if (phase !== null) phase('stats', 'done')
             return merged
           }
           if (phase !== null) phase('stats', 'skipped')
+          lastStatsRef.current = data
+          setSummary(data)
           return data
         } catch (caught) {
           if (phase !== null) {
@@ -16982,10 +17003,6 @@ window.__ModuleLoader__.load({
          ⋯ menu's 展开全部/折叠全部 entries drive the same map the folder
          headers toggle. */
       const [foldedDirs, setFoldedDirs] = useState({})
-      /* Last-seen "HEAD hash|branch" signature, from the poll summaries
-         (v0.18.7). A ref, not state: a change triggers a data reload, not a
-         render. null until the first poll tick records the baseline. */
-      const headRef = useRef(null)
       const refresh = useCallback(async (opts) => {
         if (repoRoot === null) return
         const withFetch = opts !== null && typeof opts === 'object' && opts.fetchRemote === true && remoteReadyRef.current === true
@@ -17011,12 +17028,6 @@ window.__ModuleLoader__.load({
               try { return await loadCommits(0) } finally { if (phase !== null) phase('log', 'done') }
             })()
             const [summaryData, branchesData, page] = await Promise.all([loadSummary(phase), branchesWork, commitsWork])
-            /* Keep the poll's HEAD signature in step (v0.18.7): after an
-               in-panel commit/checkout the next tick must not re-pull
-               branches + history all over again. */
-            if (summaryData !== null && typeof summaryData === 'object' && typeof summaryData.head === 'string') {
-              headRef.current = summaryData.head + '|' + (summaryData.branch === undefined ? '' : summaryData.branch)
-            }
             /* The write side of the first-paint cache: exactly the FIRST page
                (a paged fetch never reaches this path), replaced on every
                refresh — the auto-refresh included — so a session switch through
@@ -17099,42 +17110,11 @@ window.__ModuleLoader__.load({
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [repoRoot, refresh, tick])
 
-      useEffect(() => {
-        if (props.visible !== true || repoRoot === null) return undefined
-        /* In-flight gate (issue #11): a summary over a tree with thousands of
-           changes can outlast AUTO_REFRESH_MS, and re-entering just piles
-           queued scans behind the repo lock (the interval deliberately does
-           not run through `guard` — a background refresh must not flash the
-           busy UI). Skip while the previous round is still running; the next
-           tick re-checks. */
-        let inFlight = false
-        const timer = setInterval(() => {
-          if (inFlight === true) return
-          inFlight = true
-          void (async () => {
-            try {
-              const data = await loadSummary()
-              /* v0.18.7: the poll used to be summary-only, so commits and
-                 checkouts made OUTSIDE the panel (terminal, another tool)
-                 never reached the history and branch lists until a manual
-                 refresh. Each summary now carries HEAD + branch; when that
-                 signature moves, re-pull branches + history. The panel's own
-                 actions already refresh everything through run() → refresh()
-                 (which also re-records the signature), so this stays quiet
-                 for in-panel work. The null baseline (first tick) only
-                 records — the mount refresh already pulled everything. */
-              const sig = data !== null && typeof data === 'object' && typeof data.head === 'string'
-                ? data.head + '|' + (data.branch === undefined ? '' : data.branch)
-                : null
-              if (sig !== null && headRef.current !== null && sig !== headRef.current) {
-                await Promise.all([loadBranches(), loadCommits(0)])
-              }
-              if (sig !== null) headRef.current = sig
-            } catch (error) { void error } finally { inFlight = false }
-          })()
-        }, AUTO_REFRESH_MS)
-        return () => clearInterval(timer)
-      }, [props.visible, repoRoot, loadSummary, loadBranches, loadCommits])
+      /* 12s 自动刷新已移除（用户要求）：左侧动作条已有手动刷新按钮，自动
+         轮询每次都会重绘列表、制造统计闪烁，且用户明确不需要这个动作。
+         数据仍在 mount / 手动刷新 / 会话切换 / 任何写操作(run→refresh) 时
+         更新。外部提交或切分支后点一下刷新即可。 */
+
 
       const run = useCallback(async (method, payload) => {
         const result = await guard(() => request(method, Object.assign({}, base, payload)))
@@ -17199,6 +17179,9 @@ window.__ModuleLoader__.load({
            follows, so both seats always name the same repository. */
         rememberRepoShared(sessionId, path)
         setSummary(null)
+        /* 换仓库后没有「上一份列表」可保持，清空缓存让新仓库首屏正常
+           先出行（骨架帧），不要在 stats 飞行期间白屏。 */
+        lastStatsRef.current = null
         setBranches(null)
         remoteReadyRef.current = false
         setCommits([])
@@ -17209,7 +17192,6 @@ window.__ModuleLoader__.load({
         /* The signature is per-repo: force a fresh baseline for the new one
            so the first poll tick doesn't mistake the repo switch for an
            outside HEAD move. */
-        headRef.current = null
         setDetail(null)
         setSelectedHash(null)
         resetDiff()
