@@ -2792,3 +2792,30 @@ test('ugit reference details: directory-tree header and flat changes list (v0.37
   assert.match(client, /skip emitGroup's/, 'the flat branch omits group heads on purpose')
   assert.match(client, /const head = props\.hideHeader/, 'the normal grouped view is unchanged')
 })
+
+test('follow-up UX fixes: no composer pill, tabbed settings, prefs-only split, untracked fix, gutter direction (v0.37.1)', () => {
+  // 1) 输入框下的仓库/分支/变更数胶囊不再注册到宿主 slot。
+  assert.doesNotMatch(client, /pillSlots\.inject\('conversation\.input\.left'/,
+    'the composer status pill is no longer mounted')
+  // 2) 设置弹窗：动作条设置 / 功能区布局 分成两个 TAB，弹窗加宽。
+  assert.match(client, /const \[tab, setTab\] = useState\('rail'\)/, 'RailSettings has a tab state')
+  assert.match(client, /tabButton\('rail', 'rail\.settings'/, 'a rail tab button exists')
+  assert.match(client, /tabButton\('layout', 'layout\.settings\.title'/, 'a layout tab button exists')
+  assert.match(client, /tab === 'rail' \? E\('div', \{ className: 'dig-rail-list'/, 'rail content is tab-gated')
+  assert.match(client, /tab === 'layout' \? \(props\.layoutEditor/, 'layout content is tab-gated')
+  assert.match(client, /\.dig-dialog-wide\{[^}]*max-width:min\(720px,94%\)/, 'the wide dialog is widened')
+  assert.match(client, /\.dig-dialog-title\{[^}]*white-space:nowrap/, 'dialog titles do not wrap')
+  // 3) split / unified 只跟随用户偏好，不因单侧文件强制单栏。
+  assert.doesNotMatch(client, /const oneSided =/, 'the oneSided forced-single-column rule is gone')
+  assert.doesNotMatch(client, /oneSided !== true/, 'split is no longer gated by oneSided')
+  assert.match(client, /const split = prefs\.split === true/, 'split follows prefs.split only')
+  // 3b) 未跟踪文件强制走内联 --no-index 通道，外部 DiffTab 不再吞掉内容。
+  assert.match(client, /if \(seed\.untracked === true\) return false/, 'untracked diffs stay inline')
+  // 3c) 未跟踪文件在变更列表显示增加行数。
+  assert.match(client, /changes: Object\.assign\(\{\}, changes, \{ staged: staged, unstaged: unstaged, untracked: untracked \}\)/,
+    'applyStats merges untracked +N rows')
+  // 4) 每条竖线拖它左边的列（side=prev / 右拖变宽），不再方向反转。
+  assert.match(client, /changes: \(\) => gutter\('tree', 'prev'\)/, 'the dirTree|changes divider resizes the tree column')
+  assert.match(client, /diff: \(\) => gutter\('changes', 'prev'\)/, 'the changes|diff divider resizes the changes column')
+  assert.doesNotMatch(client, /gutter\('changes', 'next'\)/, 'no reversed-side gutter remains')
+})

@@ -6,7 +6,7 @@ import { PanelError, badRequest, cwdOf, requireRef, requireRelativePath, clampIn
 
 import {
 
-  git, runGit, repoRootOf, parseLog, LOG_FORMAT, decorate, parsePorcelain, classify, numstatOf,
+  git, runGit, repoRootOf, parseLog, LOG_FORMAT, decorate, parsePorcelain, classify, numstatOf, untrackedStatOf,
 
   ignoredEntriesOf, stashCountOf, worktreesOf, currentBranchOf, upstreamOf,
 
@@ -56,6 +56,10 @@ async function summary(payload) {
     originNameOf(root),
   ])
   const groups = classify(parsePorcelain(statusOut))
+  /* 未跟踪文件没有 index 条目，git diff --numstat 不列出它们；逐个用
+     --no-index 读真实内容数新增行数，让变更列表能显示 +N。两阶段首屏
+     (statsDeferred) 由后续 stats() 补齐，这里不重复跑。 */
+  const untrackedStat = deferStats === true ? new Map() : await untrackedStatOf(root, groups.untracked)
   return {
     repoRoot: root,
     cwd,
@@ -71,7 +75,7 @@ async function summary(payload) {
     changes: {
       staged: decorate(groups.staged, stagedStat),
       unstaged: decorate(groups.unstaged, unstagedStat),
-      untracked: decorate(groups.untracked, new Map()),
+      untracked: decorate(groups.untracked, untrackedStat),
       conflicted: decorate(groups.conflicted, new Map()),
       ignored: ignored.entries,
       ignoredTruncated: ignored.truncated,
@@ -89,16 +93,21 @@ async function summary(payload) {
    decorates its entries with. Read-only: deliberately not in WRITE_METHODS. */
 async function stats(payload) {
   const root = await repoRootOf(cwdOf(payload), payload)
-  const [unstaged, staged] = await Promise.all([
+  const [unstaged, staged, statusOut] = await Promise.all([
     numstatOf(root, []),
     numstatOf(root, ['--cached']),
+    git(root, ['status', '--porcelain=v1', '-z', '--untracked-files=all']),
   ])
+  /* 两阶段首屏 statsDeferred 时，untracked 的 +N 在这里补齐（与 summary
+     的非 deferred 路径同一套 --no-index 统计）。 */
+  const groups = classify(parsePorcelain(statusOut))
+  const untrackedStat = await untrackedStatOf(root, groups.untracked)
   const pack = (map) => {
     const rows = []
     for (const [path, stat] of map) rows.push([path, stat.additions, stat.deletions, stat.binary === true])
     return rows
   }
-  return { unstaged: pack(unstaged), staged: pack(staged) }
+  return { unstaged: pack(unstaged), staged: pack(staged), untracked: pack(untrackedStat) }
 }
 
 async function branches(payload) {

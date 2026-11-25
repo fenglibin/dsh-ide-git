@@ -323,6 +323,34 @@ async function numstatOf(root, args) {
   return map
 }
 
+/** 未跟踪文件没有 index 条目，`git diff --numstat` 不会列出它们，所以
+ *  summary 里它们的 additions/deletions 一直是 0、变更列表看不到 +N。
+ *  逐个跑 `git diff --no-index --numstat -- /dev/null <file>`（argv 数组、
+ *  路径越界校验、存在性差异的 exit 1 视为正常数据），把新增行数填回去。
+ *  只读：不进 WRITE_METHODS；与 diff() 的 --no-index 分支同一套围栏。 */
+async function untrackedStatOf(root, entries) {
+  const map = new Map()
+  for (const entry of entries) {
+    if (entry === null || typeof entry.path !== 'string' || entry.path === '') continue
+    try {
+      const rel = entry.path
+      const absolute = path.isAbsolute(rel) ? rel : path.join(root, rel)
+      if (absolute !== root && !absolute.startsWith(root + path.sep)) continue
+      const headerPath = absolute.split(path.sep).join('/')
+      const result = await runGit(root, ['diff', '--no-color', '--no-ext-diff', '--numstat', '--no-index', '--', '/dev/null', headerPath])
+      if (result.code !== 0 && result.code !== 1) continue
+      const line = result.stdout.split('\n')[0] || ''
+      const firstTab = line.indexOf('\t')
+      const secondTab = line.indexOf('\t', firstTab + 1)
+      if (firstTab < 0 || secondTab < 0) continue
+      const addRaw = line.slice(0, firstTab)
+      const binary = addRaw === '-'
+      map.set(rel, { additions: binary ? 0 : Number.parseInt(addRaw, 10) || 0, deletions: 0, binary })
+    } catch (error) { void error }
+  }
+  return map
+}
+
 function decorate(entries, numstat) {
   return entries.map((entry) => {
     const stat = numstat.get(entry.path)
@@ -464,7 +492,7 @@ export {
 
   repoRootOf, currentBranchOf, upstreamOf, aheadBehindOf,
 
-  parsePorcelain, classify, ignoredEntriesOf, numstatOf, decorate,
+  parsePorcelain, classify, ignoredEntriesOf, numstatOf, untrackedStatOf, decorate,
 
   parseLog, LOG_FORMAT, stashCountOf, sameDirectory, worktreesOf,
 

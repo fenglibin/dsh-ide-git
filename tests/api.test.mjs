@@ -95,6 +95,9 @@ test('summary classifies staged / unstaged / untracked with diffstats', async ()
   assert.deepEqual(unstaged, ['a.txt'])
   assert.equal(body.data.changes.unstaged[0].additions, 1)
   assert.deepEqual(body.data.changes.untracked.map((file) => file.path), ['untracked.txt'])
+  // 未跟踪文件没有 index 条目，git diff --numstat 不列出它们；现在用
+  // --no-index 读真实内容数行数，变更列表应显示 +1（用户要求）。
+  assert.equal(body.data.changes.untracked[0].additions, 1)
   assert.ok(Array.isArray(body.data.worktrees))
   assert.equal(body.data.worktrees.length, 1)
   // v0.18.7: HEAD hash — the client's poll diffs it to notice OUTSIDE
@@ -127,6 +130,10 @@ test('summary with stats: false defers the diffstats, stats delivers phase two (
   const staged = second.body.data.staged.filter((row) => row[0] === 'staged.txt')
   assert.equal(staged.length, 1)
   assert.equal(staged[0][1], 1)
+  // 两阶段也要补齐未跟踪文件的 +N（deferStats 首屏为 0，靠 stats 合并）。
+  const untracked = second.body.data.untracked.filter((row) => row[0] === 'untracked.txt')
+  assert.equal(untracked.length, 1)
+  assert.equal(untracked[0][1], 1)
 })
 
 test('gitLogs records runs and clone validates its inputs (v0.15 more-menu)', async () => {

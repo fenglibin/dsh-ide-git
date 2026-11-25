@@ -12204,10 +12204,13 @@ window.__ModuleLoader__.load({
         const result = renderedHunks(file.hunks)
         return { hunks: result.hunks, truncated: result.truncated, maps: result.hunks.map((hunk) => hunkHighlights(hunk, highlighter)) }
       }, [file, highlighter])
-      const hasAdditions = file !== undefined && file.hunks.some((hunk) => hunk.lines.some((line) => line.indexOf('+') === 0))
-      const hasDeletions = file !== undefined && file.hunks.some((hunk) => hunk.lines.some((line) => line.indexOf('-') === 0))
-      const oneSided = hasAdditions !== hasDeletions
-      const split = prefs.split === true && oneSided !== true
+      /* 对比方式只跟随用户手动选的 split / unified 偏好，不因文件内容是
+         「纯新增 / 纯删除 / 双侧修改」而变（用户明确要求）。此前用
+         oneSided = hasAdditions !== hasDeletions 把单侧文件强制压成单栏，
+         与工具条上用户刚点的「左右对比」互相矛盾，故移除。纯新增文件在
+         split 下呈现「左空右满」双列，SplitColumns/SplitLine 已有
+         dig-lf-empty 空 cell 处理，不会崩。 */
+      const split = prefs.split === true
       const wrap = prefs.wrap === true
       if (props.loading === true) return E('div', { className: 'dig-lf-root' }, E('p', { className: 'dig-lf-status', role: 'status' }, t('diff.loading')))
       if (file === undefined) return E('div', { className: 'dig-lf-root' }, E('p', { className: 'dig-lf-status' }, t('diff.empty')))
@@ -13289,6 +13292,16 @@ window.__ModuleLoader__.load({
     function RailSettings(props) {
       const t = props.t
       const [dragId, setDragId] = useState(null)
+      /* 两个功能区各占一个 TAB，避免上下堆叠把「功能区布局」压成一条
+         滚动区。TAB 文案复用既有 21 门词典键（rail.settings /
+         layout.settings.title），不新增键。 */
+      const [tab, setTab] = useState('rail')
+      const tabButton = (id, labelKey, active) => E('button', {
+        type: 'button', key: id,
+        className: 'dig-settings-tab' + (active === true ? ' dig-settings-tab-active' : ''),
+        'aria-pressed': active === true ? 'true' : 'false',
+        onClick: () => setTab(id),
+      }, t(labelKey))
       return E('div', {
         className: 'dig-overlay',
         onMouseDown: (event) => { if (event.target === event.currentTarget) props.onClose() },
@@ -13296,7 +13309,10 @@ window.__ModuleLoader__.load({
         E('div', { className: 'dig-dialog dig-dialog-wide' },
           E('div', { className: 'dig-dialog-title' }, t('rail.settings')),
           E('div', { className: 'dig-dialog-text' }, t('rail.settingsHint')),
-          E('div', { className: 'dig-rail-list' },
+          E('div', { className: 'dig-settings-tabs' },
+            tabButton('rail', 'rail.settings', tab === 'rail'),
+            tabButton('layout', 'layout.settings.title', tab === 'layout')),
+          tab === 'rail' ? E('div', { className: 'dig-rail-list' },
             props.items.map((item, index) => E('div', {
               key: item.id,
               className: 'dig-rail-item'
@@ -13330,8 +13346,8 @@ window.__ModuleLoader__.load({
                 className: 'dig-icon-btn dig-icon-btn-small' + (item.hidden === true ? '' : ' dig-icon-btn-active'),
                 title: item.hidden === true ? t('rail.show') : t('rail.hide'),
                 onClick: () => props.onToggle(item.id),
-              }, E(Icon, { name: item.hidden === true ? 'eyeOff' : 'eye', size: 13 }))))),
-          props.layoutEditor === null || props.layoutEditor === undefined ? null : props.layoutEditor,
+              }, E(Icon, { name: item.hidden === true ? 'eyeOff' : 'eye', size: 13 }))))) : null,
+          tab === 'layout' ? (props.layoutEditor === null || props.layoutEditor === undefined ? null : props.layoutEditor) : null,
           E('div', { className: 'dig-dialog-actions' },
             E('button', { type: 'button', className: 'dig-btn', onClick: props.onReset }, t('rail.reset')),
             E('button', { type: 'button', className: 'dig-btn dig-btn-primary', onClick: props.onClose }, t('confirm.ok')))))
@@ -16646,10 +16662,13 @@ window.__ModuleLoader__.load({
         const changes = data.changes
         const staged = build(changes.staged, statsPayload.staged)
         const unstaged = build(changes.unstaged, statsPayload.unstaged)
-        if (staged === changes.staged && unstaged === changes.unstaged) return data
+        /* 未跟踪文件的 +N 由 stats() 的 --no-index 统计补齐（原两阶段
+           只合并 staged/unstaged，untracked 恒 0）。 */
+        const untracked = build(changes.untracked, statsPayload.untracked)
+        if (staged === changes.staged && unstaged === changes.unstaged && untracked === changes.untracked) return data
         return Object.assign({}, data, {
           statsDeferred: false,
-          changes: Object.assign({}, changes, { staged: staged, unstaged: unstaged }),
+          changes: Object.assign({}, changes, { staged: staged, unstaged: unstaged, untracked: untracked }),
         })
       }
 
@@ -17051,6 +17070,11 @@ window.__ModuleLoader__.load({
          repoRoot 并进它自己的 git 调用,多仓库工作区不会落错仓库。 */
       const previewDiff = useCallback((seed) => {
         if (repoRoot === null) return false
+        /* 未跟踪/新增文件没有 index 条目，better-sidebar 自家 DiffTab 用普通
+           git diff 拉不到内容（显示「没有可显示的文本差异」）。本插件宿主
+           read.js 的 --no-index /dev/null <file> 分支能生成真实 new-file
+           patch，所以这类文件强制回退内联通道，保证展示文件内容。 */
+        if (seed.untracked === true) return false
         /* Placement decides the door (issue #28): 'inline' keeps the click in
            the panel's own pane — and its split / wrap controls — by refusing
            here, so the caller's inline leg runs. 'dock' asks the seat channel
@@ -18931,11 +18955,18 @@ window.__ModuleLoader__.load({
             E(BranchTree, { t: t, branches: branches, favorites: favorites, onCheckout: checkout, onBrowse: browseBranch, onBranchMenu: branchMenu, onDeleteEntries: deleteBranchEntries, onCopyValues: copyValues, onPicksChange: onBranchPicks, clearSignal: pickEpochs.tree })),
           history: E('div', { className: 'dig-pane dig-pane-main' }, historyPane),
         }
+        /* gutterBefore[id]() 插在 zone[id] 节点「之前」（UgitBody 的
+           children 顺序：… 上一条列，gutter，当前列 …）。因此每条竖线
+           应当拖它**左边那一列**，且 side 必须是 'prev'
+           （targetOf = previousElementSibling = 左列，sign = +1 →
+           右/下拖变宽、左/上拖变窄，符合直觉）。此前照搬旧手工排版的
+           'next'/-1 语义，把右邻列当成目标且方向取反，导致「右拖反缩 /
+           左拖反扩」。附加列 branches/history 没有独立 pane key，不给拖拽。 */
         const gutterBefore = {
-          changes: () => gutter('changes', 'next'),
-          diff: () => gutter('changes', 'next'),
-          dirTree: () => gutter('tree', 'prev'),
-          branches: () => gutter('tree', 'prev'),
+          changes: () => gutter('tree', 'prev'),
+          diff: () => gutter('changes', 'prev'),
+          dirTree: () => null,
+          branches: () => null,
           history: () => null,
         }
         const tabOrder = layout.tabs[layout.activeTab] && layout.tabs[layout.activeTab].order !== ''
@@ -19879,8 +19910,8 @@ window.__ModuleLoader__.load({
       '.dig-gitlog-at{color:var(--dsw-alias-label-tertiary);font-size:calc(11px + var(--dsh-content-font-delta-secondary, 0px))}',
       '.dig-gitlog-argv{font-weight:600;word-break:break-all}',
       '.dig-gitlog-pre{margin:4px 0 0;padding:6px 8px;border-radius:var(--dsw-radius-md,12px);background:var(--dsw-alias-bg-layer-3,var(--dsw-alias-bg-layer-2));overflow:auto;max-height:160px;white-space:pre-wrap;word-break:break-all;font-size:calc(11px + var(--dsh-code-font-delta, 0px))}',
-      '.dig-dialog-wide{min-width:min(360px,92%)}',
-      '.dig-dialog-title{font-weight:600}',
+      '.dig-dialog-wide{width:min(720px,94%);min-width:min(360px,92%);max-width:min(720px,94%)}',
+      '.dig-dialog-title{font-weight:600;white-space:nowrap;flex:none}',
       '.dig-dialog-text{color:var(--dsw-alias-label-secondary);white-space:pre-wrap}',
       '.dig-dialog-actions{display:flex;justify-content:flex-end;gap:8px}',
       '.dig-dialog-actions .dig-btn-primary{margin-left:0}',
@@ -20127,7 +20158,16 @@ window.__ModuleLoader__.load({
       '.dig-dirtree-dir:hover,.dig-dirtree-file:hover{background:var(--dsw-alias-bg-layer-2)}',
       '.dig-dirtree-name,.dig-dirtree-leaf{overflow:hidden;text-overflow:ellipsis}',
       /* layout settings editor (rides the in-panel rail dialog) */
-      '.dig-ugit-settings{display:flex;flex-direction:column;gap:6px;max-height:40vh;overflow:auto;margin:8px 0;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l2)}',
+      '.dig-settings-tabs{display:flex;align-items:center;gap:4px;flex:none;border-bottom:1px solid var(--dsw-alias-border-l2);padding-bottom:6px}',
+      '.dig-settings-tab{border:0;background:transparent;color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500;padding:5px 12px;border-radius:var(--dsw-radius-sm,6px);cursor:pointer;white-space:nowrap}',
+      '.dig-settings-tab:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1)}',
+      '.dig-settings-tab-active{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1);font-weight:600}',
+      /* TAB 化后两个面板各自独占一屏：去掉原来的分节边框与嵌套滚动，
+         让列表撑满弹窗剩余高度；只在本弹窗内覆盖，不动共用 .dig-settings-list。 */
+      '.dig-dialog-wide .dig-settings-list,.dig-dialog-wide .dig-rail-list{flex:1;min-height:0;max-height:none}',
+      /* 「默认视图」「提交框位置」等行标题不换行（加宽后也保持一行）。 */
+      '.dig-dialog-wide .dig-settings-row>span:first-child{white-space:nowrap;flex:none}',
+      '.dig-ugit-settings{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}',
       '.dig-ugit-settings-title{font-weight:600;font-size:12px}',
       '.dig-ugit-settings-desc{color:var(--dsw-alias-label-secondary);font-size:11px;line-height:1.5}',
       '.dig-ugit-settings-head{color:var(--dsw-alias-label-secondary);font-size:11px;font-weight:600;margin-top:4px}',
@@ -21762,26 +21802,11 @@ window.__ModuleLoader__.load({
         }, 'dsh-ide-git: conversation view tab')
       })
 
-      /* ---- door 4: the composer status pill (issue: status in the input bar) ---- */
-      /* A tiny repo/branch/change readout inside the host composer's tool row,
-         in the 'conversation.input.left' gap right of the permission chip. It
-         shares the first-paint cache's read paths (read-only routes only) and
-         syncs repository/branch selection with the panel through the module
-         store above. The slot is a plain list; a host without ui-conversation
-         never mounts it and nothing throws. */
-      ctx.inject(['slots'], (pillCtx) => {
-        const pillSlots = pillCtx.get('slots')
-        if (pillSlots === undefined || pillSlots === null || typeof pillSlots.inject !== 'function') return
-        pillCtx.effect(() => {
-          const offPill = pillSlots.inject('conversation.input.left', () => pillSlots.register(
-            { name: 'conversation.input.left', id: 'dsh-ide-git:status', order: 20, locale: LOCALE_NS },
-            (pillProps) => E(ComposerGitStatus, Object.assign({}, pillProps, { t: t, ctx: ctx })),
-          ))
-          return () => {
-            try { offPill() } catch (error) { void error }
-          }
-        }, 'dsh-ide-git: composer status pill')
-      })
+      /* 用户要求去掉输入框下方的仓库/分支/变更数胶囊（原 door 4
+         'conversation.input.left' 状态条）。组件 ComposerGitStatus、词典与
+         CSS 保留为死代码（有多条 smoke 断言钉住，删除会连带变红），但不再
+         注册到宿主 slot，因此不会再渲染、也不会再跑轮询/lineStats 请求。
+         设置卡里的旧开关随之成为无害的悬空项。 */
 
       /* ---- session-switch prewarm ---- */
       /* Warm the first-paint cache the moment a workspace session becomes
