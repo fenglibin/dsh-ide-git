@@ -2694,7 +2694,7 @@ test('ugit layout wiring: one document, four shells, no cross-layer reads (v0.37
   assert.match(client, /layoutEditor: E\(UgitLayoutSettings, \{/, 'the gear dialog mounts the layout editor')
   // Only the storage layer and Panel may call readLayout/writeLayout.
   const ioCalls = client.match(/readLayout\(\)|writeLayout\(/g) || []
-  assert.ok(ioCalls.length <= 5, 'layout IO stays in the storage layer (2 defs) + the 3 Panel writers (saw ' + ioCalls.length + ')')
+  assert.ok(ioCalls.length <= 6, 'layout IO stays in the storage layer (2 defs) + the 4 Panel writers (saw ' + ioCalls.length + ')')
   // The diff column must never be sized by paneStyle('diff') (it returns a
   // height and would squash the main pane to 55%).
   assert.doesNotMatch(client, /E\(UgitBody[\s\S]{0,1200}paneStyle\('diff'\)/,
@@ -2838,7 +2838,7 @@ test('history progressive columns + outside-file sink + pending area (v0.37.3)',
   // 1) 历史 Tab 三栏渐进(列表→+详情→+文件diff),两条内部分隔线比例记忆。
   assert.match(client, /const historyRatios = \[historyRatio\(storedHistory/, 'normalizeLayout remembers the two history column ratios')
   assert.match(client, /className: 'dig-history-columns', ref: historyZoneRef/, 'the history columns container is measured')
-  assert.match(client, /onDrag: \(px\) => onHistoryRatio\(index, px\)/, 'the internal gutters drive the remembered ratios')
+  assert.match(client, /setLayout\(\(prev\) => \{[\s\S]*?historyRatios/, 'the internal gutters drive the remembered ratios via functional setState')
   assert.match(client, /const HISTORY_GUTTER_PX = 9/, 'the gutter width is a constant')
   // 2) 会话 cwd 之外的文件沉到变更列表最下面。
   assert.match(client, /const outside = \(path\) => prefix !== '' && !path\.startsWith\(prefix\)/, 'files outside the session cwd sink to the bottom')

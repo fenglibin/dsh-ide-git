@@ -13797,6 +13797,12 @@ window.__ModuleLoader__.load({
       }
       const onPointerDown = (event) => {
         if (event.button !== undefined && event.button !== 0) return
+        /* 历史三栏的线 1 紧贴 HistoryList（useRubberBand 在 window 级监听
+           pointermove 并可能抢占同 pointerId 的后续事件）。阻止默认行为并
+           停止冒泡，保证拖线手势永远由 Gutter 自己持有（真实浏览器与
+           程序化事件同路径）。 */
+        event.preventDefault()
+        if (typeof event.stopPropagation === 'function') event.stopPropagation()
         dragRef.current = {
           id: event.pointerId,
           at: props.vertical === true ? event.clientX : event.clientY,
@@ -15895,13 +15901,11 @@ window.__ModuleLoader__.load({
           return
         }
         pickAnchor.current = commit.hash
-        /* Plain click only SELECTS (single-replace, the changes list's
-           model): the detail view moved to DOUBLE-click. v0.18.3 updated the
-           comment but left props.onSelect(commit) on this path, so single
-           clicks kept yanking the pane away (user report) — the call is gone
-           for real now; row highlight comes from the picked set, Enter is the
-           keyboard twin of the double-click. */
+        /* 单击即打开提交详情（用户要求，ugit 的点击模型）：单选替换后直接
+           展示右侧详情面板，不再要求双击。Shift/Ctrl 多选（上面两个分支）
+           仍只改选择集、不开详情。row highlight 来自 picked 集合。 */
         setPicks((previous) => previous.size === 1 && previous.has(commit.hash) === true ? previous : new Set([commit.hash]))
+        if (props.onSelect !== undefined) props.onSelect(commit)
       }
       /* Ctrl+A selects the whole filtered list; everything else (Ctrl+C, Esc)
          belongs to the Panel-level handler that owns the picked set. */
@@ -18570,19 +18574,29 @@ window.__ModuleLoader__.load({
          走最后一段。拖动经 onHistoryRatio 写回 LAYOUT_KEY；三条栏用 px 换算
          成比例需要容器宽——Gutter 上报的是 px，除以 historyZoneRef 实测宽。 */
       const historyRatios = layout.historyRatios
+      /* 拖动写回必须是函数式 setState：Gutter 的 onDrag 每帧触发，若基于
+         渲染期闭包里的 historyRatios 计算并整组写回，第二条线会把第一条线
+         刚写入的比例覆盖回旧值（真机复现：拖线1 无效、拖线2 生效但
+         ratios=[0.42, 0.689]）。函数式拿到最新 prev，两条线各自增量正确。 */
       const onHistoryRatio = (index, px) => {
         const host = historyZoneRef.current
         const total = host !== null && typeof host.getBoundingClientRect === 'function' ? host.getBoundingClientRect().width : 0
         if (!(total > 0)) return
-        if (index === 0) {
-          const listRatio = Math.min(0.9, Math.max(0.1, px / total))
-          onLayoutChange(Object.assign({}, layout, { historyRatios: [listRatio, historyRatios[1]] }))
-        } else {
-          const listPx = total * historyRatios[0]
-          const rest = Math.max(1, total - listPx - HISTORY_GUTTER_PX)
-          const detailRatio = Math.min(0.9, Math.max(0.1, px / rest))
-          onLayoutChange(Object.assign({}, layout, { historyRatios: [historyRatios[0], detailRatio] }))
-        }
+        const clamp = (value) => Math.min(0.9, Math.max(0.1, value))
+        setLayout((prev) => {
+          const ratios = Array.isArray(prev.historyRatios) ? prev.historyRatios : [0.42, 0.42]
+          let next0 = ratios[0]
+          let next1 = ratios[1]
+          if (index === 0) {
+            next0 = clamp(px / total)
+          } else {
+            const rest = Math.max(1, total * (1 - ratios[0]) - HISTORY_GUTTER_PX)
+            next1 = clamp(px / rest)
+          }
+          const next = normalizeLayout(Object.assign({}, prev, { historyRatios: [next0, next1] }))
+          writeLayout(next)
+          return next
+        })
       }
       const historyGutter = (index, nameKey) => {
         const ratios = historyRatios
@@ -18602,7 +18616,9 @@ window.__ModuleLoader__.load({
       }
       const listNode = E('div', { className: 'dig-hcol dig-hcol-list', style: { flex: '0 0 auto', width: String(Math.round(historyRatios[0] * 100)) + '%' } },
         E(HistoryList, Object.assign({}, historyListProps, { hideSearch: compact })))
-      const detailNode = E('div', { className: 'dig-hcol dig-hcol-detail', style: { flex: '1 1 auto', minWidth: '200px' } }, historyDetailNode)
+      /* 详情栏宽度 = 剩余宽（总宽 − 列表 − 两条 gutter）× ratios[1]，diff 吃
+         走最后一段——这样 ratios[1] 真正落到布局上，第二条分隔线拖得动。 */
+      const detailNode = E('div', { className: 'dig-hcol dig-hcol-detail', style: { flex: '0 0 auto', width: 'calc((100% - ' + String(Math.round(historyRatios[0] * 100)) + '% - ' + (HISTORY_GUTTER_PX * 2) + 'px) * ' + historyRatios[1] + ')', minWidth: '200px' } }, historyDetailNode)
       /* 第三栏：选中文件时显示该文件的 diff；patch 为空且未加载时是中性占位
          （例如刚切到三栏的那一帧），绝不显示「没有可显示的文本差异」。 */
       /* 第三栏：选中文件时展示该文件 patch。这里刻意不调用 diffPaneOf ——
