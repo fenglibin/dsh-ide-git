@@ -169,6 +169,9 @@ window.__ModuleLoader__.load({
       'toast.gitignoreAdded': '已将 {path} 添加到 .gitignore',
       'toast.gitignoreExists': '{path} 已在 .gitignore 中',
       'menu.unstageN': '取消暂存 {n} 项',
+      'menu.pendAdd': '添加至“待提交”',
+      'menu.pendAddN': '添加 {n} 个文件至“待提交”',
+      'menu.pendRemove': '移出“待提交”',
       'menu.discardN': '还原 {n} 项…',
       'menu.cherryN': 'Cherry-pick {n} 个提交',
       'menu.deleteLocalN': '删除 {n} 个本地分支…',
@@ -231,6 +234,8 @@ window.__ModuleLoader__.load({
       'send.diffNewLines': '第 {lines} 行',
       'send.diffOldLines': '第 {lines} 行(旧行号)',
       'history.empty': '这个仓库还没有提交',
+      'history.columnList': '提交列表',
+      'history.columnFiles': '变更文件',
       'history.loadMore': '加载更多',
       'history.filter': '文本或哈希',
       'detail.files': '变更文件',
@@ -522,6 +527,7 @@ window.__ModuleLoader__.load({
       'counts.staged': '已暂存 {n}',
       'counts.ignored': '忽略 {n}',
       'counts.unstaged': '更改 {n}',
+      'changes.pending': '待提交 {n}',
       'counts.untracked': '未跟踪 {n}',
       'changes.modeOnly': '权限',
       'counts.conflicted': '冲突 {n}',
@@ -624,6 +630,9 @@ window.__ModuleLoader__.load({
       'toast.gitignoreAdded': 'Added {path} to .gitignore',
       'toast.gitignoreExists': '{path} is already in .gitignore',
       'menu.unstageN': 'Unstage {n} items',
+      'menu.pendAdd': '添加至“待提交”',
+      'menu.pendAddN': '添加 {n} 个文件至“待提交”',
+      'menu.pendRemove': '移出“待提交”',
       'menu.discardN': 'Discard {n} items…',
       'menu.cherryN': 'Cherry-pick {n} commits',
       'menu.deleteLocalN': 'Delete {n} local branches…',
@@ -686,6 +695,8 @@ window.__ModuleLoader__.load({
       'send.diffNewLines': 'lines {lines}',
       'send.diffOldLines': 'lines {lines} (old numbering)',
       'history.empty': 'This repository has no commits yet',
+      'history.columnList': 'Commit list',
+      'history.columnFiles': 'Changed files',
       'history.loadMore': 'Load more',
       'history.filter': 'Text or hash',
       'detail.files': 'Changed files',
@@ -977,6 +988,7 @@ window.__ModuleLoader__.load({
       'counts.staged': 'Staged {n}',
       'counts.ignored': 'Ignored {n}',
       'counts.unstaged': 'Changes {n}',
+      'changes.pending': '待提交 {n}',
       'counts.untracked': 'Untracked {n}',
       'changes.modeOnly': 'mode',
       'counts.conflicted': 'Conflicts {n}',
@@ -1087,6 +1099,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '已將 {path} 加入 .gitignore',
         'toast.gitignoreExists': '{path} 已經喺 .gitignore 入面',
         'menu.unstageN': '取消暫存 {n} 項',
+        'menu.pendAdd': '添加至「待提交」',
+        'menu.pendAddN': '添加 {n} 個檔案至「待提交」',
+        'menu.pendRemove': '移出「待提交」',
         'menu.discardN': '還原 {n} 項…',
         'menu.cherryN': 'Cherry-pick {n} 個提交',
         'menu.deleteLocalN': '刪除 {n} 個本地分支…',
@@ -1149,6 +1164,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': '第 {lines} 行',
         'send.diffOldLines': '第 {lines} 行(舊行號)',
         'history.empty': '呢個存放庫仲未有提交',
+        'history.columnList': '提交列表',
+        'history.columnFiles': '變更文件',
         'history.loadMore': '載入更多',
         'history.filter': '文字或雜湊',
         'detail.files': '變更嘅檔案',
@@ -1440,6 +1457,7 @@ window.__ModuleLoader__.load({
         'counts.staged': '已暫存 {n}',
         'counts.ignored': '已忽略 {n}',
         'counts.unstaged': '變更 {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': '未追蹤 {n}',
         'changes.modeOnly': '權限',
         'counts.conflicted': '衝突 {n}',
@@ -1542,6 +1560,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '已將 {path} 加入 .gitignore',
         'toast.gitignoreExists': '{path} 已在 .gitignore 中',
         'menu.unstageN': '取消暫存 {n} 項',
+        'menu.pendAdd': '加入「待提交」',
+        'menu.pendAddN': '加入 {n} 個檔案至「待提交」',
+        'menu.pendRemove': '從「待提交」移除',
         'menu.discardN': '還原 {n} 項…',
         'menu.cherryN': 'Cherry-pick {n} 個提交',
         'menu.deleteLocalN': '刪除 {n} 個本地分支…',
@@ -1604,6 +1625,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': '第 {lines} 行',
         'send.diffOldLines': '第 {lines} 行(舊行號)',
         'history.empty': '這個版本庫還沒有提交',
+        'history.columnList': '提交列表',
+        'history.columnFiles': '變更文件',
         'history.loadMore': '載入更多',
         'history.filter': '文字或雜湊',
         'detail.files': '變更的檔案',
@@ -1895,6 +1918,7 @@ window.__ModuleLoader__.load({
         'counts.staged': '已暫存 {n}',
         'counts.ignored': '已忽略 {n}',
         'counts.unstaged': '變更 {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': '未追蹤 {n}',
         'changes.modeOnly': '權限',
         'counts.conflicted': '衝突 {n}',
@@ -1997,6 +2021,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '已將 {path} 加入 .gitignore',
         'toast.gitignoreExists': '{path} 已在 .gitignore 中',
         'menu.unstageN': '取消暫存 {n} 項',
+        'menu.pendAdd': '加入「待提交」',
+        'menu.pendAddN': '加入 {n} 個檔案至「待提交」',
+        'menu.pendRemove': '從「待提交」移除',
         'menu.discardN': '還原 {n} 項…',
         'menu.cherryN': 'Cherry-pick {n} 個提交',
         'menu.deleteLocalN': '刪除 {n} 個本地分支…',
@@ -2059,6 +2086,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': '第 {lines} 行',
         'send.diffOldLines': '第 {lines} 行(舊行號)',
         'history.empty': '呢個存放庫仲未有提交',
+        'history.columnList': '提交列表',
+        'history.columnFiles': '變更文件',
         'history.loadMore': '載入更多',
         'history.filter': '文字或雜湊',
         'detail.files': '變更嘅檔案',
@@ -2350,6 +2379,7 @@ window.__ModuleLoader__.load({
         'counts.staged': '已暫存 {n}',
         'counts.ignored': '已忽略 {n}',
         'counts.unstaged': '變更 {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': '未追蹤 {n}',
         'changes.modeOnly': '権限',
         'counts.conflicted': '衝突 {n}',
@@ -2452,6 +2482,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} を .gitignore に追加しました',
         'toast.gitignoreExists': '{path} はすでに .gitignore にあります',
         'menu.unstageN': '{n} 件のステージ解除',
+        'menu.pendAdd': '「コミット予定」に追加',
+        'menu.pendAddN': '{n} 件を「コミット予定」に追加',
+        'menu.pendRemove': '「コミット予定」から除外',
         'menu.discardN': '{n} 件を破棄…',
         'menu.cherryN': 'コミット {n} 件をチェリーピック',
         'menu.deleteLocalN': 'ローカルブランチ {n} 件を削除…',
@@ -2514,6 +2547,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': '{lines} 行目',
         'send.diffOldLines': '{lines} 行目(旧番号)',
         'history.empty': 'このリポジトリにはまだコミットがありません',
+        'history.columnList': 'コミット履歴',
+        'history.columnFiles': '変更ファイル',
         'history.loadMore': 'さらに読み込む',
         'history.filter': 'テキストまたはハッシュ',
         'detail.files': '変更されたファイル',
@@ -2805,6 +2840,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'ステージ済み {n}',
         'counts.ignored': '無視 {n}',
         'counts.unstaged': '変更 {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': '未追跡 {n}',
         'changes.modeOnly': '권한',
         'counts.conflicted': '競合 {n}',
@@ -2907,6 +2943,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path}을(를) .gitignore에 추가했습니다',
         'toast.gitignoreExists': '{path}은(는) 이미 .gitignore에 있습니다',
         'menu.unstageN': '{n}개 스테이지 해제',
+        'menu.pendAdd': '「커밋 예정」에 추가',
+        'menu.pendAddN': '{n}개 파일을「커밋 예정」에 추가',
+        'menu.pendRemove': '「커밋 예정」에서 제거',
         'menu.discardN': '{n}개 되돌리기…',
         'menu.cherryN': '커밋 {n}개 체리픽',
         'menu.deleteLocalN': '로컬 브랜치 {n}개 삭제…',
@@ -2969,6 +3008,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': '{lines}행',
         'send.diffOldLines': '{lines}행(이전 번호)',
         'history.empty': '이 저장소에는 아직 커밋이 없습니다',
+        'history.columnList': '커밋 목록',
+        'history.columnFiles': '변경 파일',
         'history.loadMore': '더 불러오기',
         'history.filter': '텍스트 또는 해시',
         'detail.files': '변경된 파일',
@@ -3260,6 +3301,7 @@ window.__ModuleLoader__.load({
         'counts.staged': '스테이지됨 {n}',
         'counts.ignored': '무시됨 {n}',
         'counts.unstaged': '변경 {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': '추적되지 않음 {n}',
         'changes.modeOnly': 'Modus',
         'counts.conflicted': '충돌 {n}',
@@ -3362,6 +3404,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} zu .gitignore hinzugefügt',
         'toast.gitignoreExists': '{path} ist bereits in .gitignore',
         'menu.unstageN': '{n} Elemente zurücknehmen',
+        'menu.pendAdd': 'Zu "Ausstehend" hinzufügen',
+        'menu.pendAddN': '{n} Datei(en) zu "Ausstehend" hinzufügen',
+        'menu.pendRemove': 'Aus "Ausstehend" entfernen',
         'menu.discardN': '{n} Elemente verwerfen…',
         'menu.cherryN': '{n} Commits cherry-picken',
         'menu.deleteLocalN': '{n} lokale Branches löschen…',
@@ -3424,6 +3469,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'Zeilen {lines}',
         'send.diffOldLines': 'Zeilen {lines} (alte Nummerierung)',
         'history.empty': 'Dieses Repository hat noch keine Commits',
+        'history.columnList': 'Commit-Liste',
+        'history.columnFiles': 'Geänderte Dateien',
         'history.loadMore': 'Mehr laden',
         'history.filter': 'Text oder Hash',
         'detail.files': 'Geänderte Dateien',
@@ -3715,6 +3762,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'Vorgemerkt {n}',
         'counts.ignored': 'Ignoriert {n}',
         'counts.unstaged': 'Änderungen {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Nicht verfolgt {n}',
         'changes.modeOnly': 'mode',
         'counts.conflicted': 'Konflikte {n}',
@@ -3817,6 +3865,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} ajouté au .gitignore',
         'toast.gitignoreExists': '{path} est déjà dans .gitignore',
         'menu.unstageN': 'Désindexer {n} éléments',
+        'menu.pendAdd': 'Ajouter à « À committer »',
+        'menu.pendAddN': 'Ajouter {n} fichier(s) à « À committer »',
+        'menu.pendRemove': 'Retirer de « À committer »',
         'menu.discardN': 'Abandonner {n} éléments…',
         'menu.cherryN': 'Cherry-pick de {n} commits',
         'menu.deleteLocalN': 'Supprimer {n} branches locales…',
@@ -3879,6 +3930,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'lignes {lines}',
         'send.diffOldLines': 'lignes {lines} (ancienne numérotation)',
         'history.empty': 'Ce dépôt n\'a pas encore de commit',
+        'history.columnList': 'Liste des commits',
+        'history.columnFiles': 'Fichiers modifiés',
         'history.loadMore': 'Charger plus',
         'history.filter': 'Texte ou empreinte',
         'detail.files': 'Fichiers modifiés',
@@ -4170,6 +4223,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'Indexé {n}',
         'counts.ignored': 'Ignoré {n}',
         'counts.unstaged': 'Modifications {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Non suivi {n}',
         'changes.modeOnly': 'mode',
         'counts.conflicted': 'Conflits {n}',
@@ -4272,6 +4326,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} добавлен в .gitignore',
         'toast.gitignoreExists': '{path} уже есть в .gitignore',
         'menu.unstageN': 'Из индекса: {n}',
+        'menu.pendAdd': 'Добавить в «Ожидающие»',
+        'menu.pendAddN': 'Добавить {n} файл(ов) в «Ожидающие»',
+        'menu.pendRemove': 'Убрать из «Ожидающие»',
         'menu.discardN': 'Отменить изменения: {n}…',
         'menu.cherryN': 'Cherry-pick {n} коммит(ов)',
         'menu.deleteLocalN': 'Удалить локальных ветвей: {n}…',
@@ -4334,6 +4391,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'строки {lines}',
         'send.diffOldLines': 'строки {lines} (старая нумерация)',
         'history.empty': 'В этом репозитории ещё нет коммитов',
+        'history.columnList': 'Список коммитов',
+        'history.columnFiles': 'Изменённые файлы',
         'history.loadMore': 'Загрузить ещё',
         'history.filter': 'Текст или хеш',
         'detail.files': 'Изменённые файлы',
@@ -4625,6 +4684,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'В индексе {n}',
         'counts.ignored': 'Игнорируется {n}',
         'counts.unstaged': 'Изменения {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Не отслеживается {n}',
         'changes.modeOnly': 'modus',
         'counts.conflicted': 'Конфликты {n}',
@@ -4727,6 +4787,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} adicionado ao .gitignore',
         'toast.gitignoreExists': '{path} já está no .gitignore',
         'menu.unstageN': 'Despreparar {n} itens',
+        'menu.pendAdd': 'Adicionar a "Pendentes"',
+        'menu.pendAddN': 'Adicionar {n} arquivo(s) a "Pendentes"',
+        'menu.pendRemove': 'Remover de "Pendentes"',
         'menu.discardN': 'Descartar {n} itens…',
         'menu.cherryN': 'Cherry-pick de {n} commits',
         'menu.deleteLocalN': 'Excluir {n} ramificações locais…',
@@ -4789,6 +4852,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'linhas {lines}',
         'send.diffOldLines': 'linhas {lines} (numeração antiga)',
         'history.empty': 'Este repositório ainda não tem commits',
+        'history.columnList': 'Lista de commits',
+        'history.columnFiles': 'Arquivos alterados',
         'history.loadMore': 'Carregar mais',
         'history.filter': 'Texto ou hash',
         'detail.files': 'Arquivos alterados',
@@ -5080,6 +5145,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'Preparado {n}',
         'counts.ignored': 'Ignorado {n}',
         'counts.unstaged': 'Alterações {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Não rastreado {n}',
         'changes.modeOnly': 'modo',
         'counts.conflicted': 'Conflitos {n}',
@@ -5182,6 +5248,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} aggiunto a .gitignore',
         'toast.gitignoreExists': '{path} è già in .gitignore',
         'menu.unstageN': 'Rimuovi {n} elementi dallo stage',
+        'menu.pendAdd': 'Aggiungi a "In attesa"',
+        'menu.pendAddN': 'Aggiungi {n} file a "In attesa"',
+        'menu.pendRemove': 'Rimuovi da "In attesa"',
         'menu.discardN': 'Scarta {n} elementi…',
         'menu.cherryN': 'Cherry-pick di {n} commit',
         'menu.deleteLocalN': 'Elimina {n} branch locali…',
@@ -5244,6 +5313,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'righe {lines}',
         'send.diffOldLines': 'righe {lines} (numerazione precedente)',
         'history.empty': 'Questo repository non ha ancora commit',
+        'history.columnList': 'Elenco commit',
+        'history.columnFiles': 'File modificati',
         'history.loadMore': 'Carica altro',
         'history.filter': 'Testo o hash',
         'detail.files': 'File modificati',
@@ -5535,6 +5606,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'In stage {n}',
         'counts.ignored': 'Ignorati {n}',
         'counts.unstaged': 'Modifiche {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Non tracciati {n}',
         'changes.modeOnly': 'modus',
         'counts.conflicted': 'Conflitti {n}',
@@ -5637,6 +5709,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} toegevoegd aan .gitignore',
         'toast.gitignoreExists': '{path} staat al in .gitignore',
         'menu.unstageN': '{n} items unstagen',
+        'menu.pendAdd': 'Toevoegen aan "In wachtrij"',
+        'menu.pendAddN': '{n} bestand(en) toevoegen aan "In wachtrij"',
+        'menu.pendRemove': 'Uit "In wachtrij" verwijderen',
         'menu.discardN': '{n} items weggooien…',
         'menu.cherryN': '{n} commits cherry-picken',
         'menu.deleteLocalN': '{n} lokale branches verwijderen…',
@@ -5699,6 +5774,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'regels {lines}',
         'send.diffOldLines': 'regels {lines} (oude nummering)',
         'history.empty': 'Deze repository heeft nog geen commits',
+        'history.columnList': 'Commitlijst',
+        'history.columnFiles': 'Gewijzigde bestanden',
         'history.loadMore': 'Meer laden',
         'history.filter': 'Tekst of hash',
         'detail.files': 'Gewijzigde bestanden',
@@ -5990,6 +6067,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'Gestaged {n}',
         'counts.ignored': 'Genegeerd {n}',
         'counts.unstaged': 'Wijzigingen {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Niet gevolgd {n}',
         'changes.modeOnly': 'läge',
         'counts.conflicted': 'Conflicten {n}',
@@ -6092,6 +6170,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': 'Dodano {path} do .gitignore',
         'toast.gitignoreExists': '{path} już jest w .gitignore',
         'menu.unstageN': 'Usuń {n} z indeksu',
+        'menu.pendAdd': 'Dodaj do «Oczekujące»',
+        'menu.pendAddN': 'Dodaj {n} plik(ów) do «Oczekujące»',
+        'menu.pendRemove': 'Usuń z «Oczekujące»',
         'menu.discardN': 'Odrzuć {n}…',
         'menu.cherryN': 'Cherry-pick {n} commit(ów)',
         'menu.deleteLocalN': 'Usuń {n} gałęzi lokalnych…',
@@ -6154,6 +6235,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'wiersze {lines}',
         'send.diffOldLines': 'wiersze {lines} (stara numeracja)',
         'history.empty': 'To repozytorium nie ma jeszcze commitów',
+        'history.columnList': 'Lista zatwierdzeń',
+        'history.columnFiles': 'Zmienione pliki',
         'history.loadMore': 'Wczytaj więcej',
         'history.filter': 'Tekst lub hash',
         'detail.files': 'Zmienione pliki',
@@ -6445,6 +6528,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'W indeksie {n}',
         'counts.ignored': 'Ignorowane {n}',
         'counts.unstaged': 'Zmiany {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Nieśledzone {n}',
         'changes.modeOnly': 'mod',
         'counts.conflicted': 'Konflikty {n}',
@@ -6547,6 +6631,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} tillagd i .gitignore',
         'toast.gitignoreExists': '{path} finns redan i .gitignore',
         'menu.unstageN': 'Avklädda {n} objekt',
+        'menu.pendAdd': 'Lägg till i "Västrand"',
+        'menu.pendAddN': 'Lägg till {n} fil(er) i "Västrand"',
+        'menu.pendRemove': 'Ta bort från "Västrand"',
         'menu.discardN': 'Förkasta {n} objekt…',
         'menu.cherryN': 'Cherry-picka {n} commit(s)',
         'menu.deleteLocalN': 'Ta bort {n} lokala grenar…',
@@ -6609,6 +6696,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'rader {lines}',
         'send.diffOldLines': 'rader {lines} (gammal numrering)',
         'history.empty': 'Det här arkivet har inga commits ännu',
+        'history.columnList': 'Inlämningslista',
+        'history.columnFiles': 'Ändrade filer',
         'history.loadMore': 'Ladda mer',
         'history.filter': 'Text eller hash',
         'detail.files': 'Ändrade filer',
@@ -6900,6 +6989,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'Klädda {n}',
         'counts.ignored': 'Ignorerade {n}',
         'counts.unstaged': 'Ändringar {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Ospårade {n}',
         'changes.modeOnly': 'mode',
         'counts.conflicted': 'Konflikter {n}',
@@ -7002,6 +7092,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} .gitignore\'a eklendi',
         'toast.gitignoreExists': '{path} zaten .gitignore\'da',
         'menu.unstageN': '{n} öğeyi hazırlıktan çıkar',
+        'menu.pendAdd': '"Bekleyen"e ekle',
+        'menu.pendAddN': '{n} dosyayı "Bekleyen"e ekle',
+        'menu.pendRemove': '"Bekleyen"den çıkar',
         'menu.discardN': '{n} öğeyi at…',
         'menu.cherryN': '{n} commit seçip al',
         'menu.deleteLocalN': '{n} yerel dalı sil…',
@@ -7064,6 +7157,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'satırlar {lines}',
         'send.diffOldLines': 'satırlar {lines} (eski numaralandırma)',
         'history.empty': 'Bu depoda henüz commit yok',
+        'history.columnList': 'İşleme listesi',
+        'history.columnFiles': 'Değişen dosyalar',
         'history.loadMore': 'Daha fazla yükle',
         'history.filter': 'Metin veya hash',
         'detail.files': 'Değişen dosyalar',
@@ -7355,6 +7450,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'Hazırlanan {n}',
         'counts.ignored': 'Yok sayılan {n}',
         'counts.unstaged': 'Değişiklikler {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'İzlenmeyen {n}',
         'changes.modeOnly': 'وضع',
         'counts.conflicted': 'Çakışmalar {n}',
@@ -7457,6 +7553,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} ditambahkan ke .gitignore',
         'toast.gitignoreExists': '{path} sudah ada di .gitignore',
         'menu.unstageN': 'Batalkan stage {n} item',
+        'menu.pendAdd': 'Tambahkan ke "Menunggu"',
+        'menu.pendAddN': 'Tambahkan {n} berkas ke "Menunggu"',
+        'menu.pendRemove': 'Hapus dari "Menunggu"',
         'menu.discardN': 'Buang {n} item…',
         'menu.cherryN': 'Cherry-pick {n} commit',
         'menu.deleteLocalN': 'Hapus {n} cabang lokal…',
@@ -7519,6 +7618,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'baris {lines}',
         'send.diffOldLines': 'baris {lines} (penomoran lama)',
         'history.empty': 'Repositori ini belum punya commit',
+        'history.columnList': 'Daftar komit',
+        'history.columnFiles': 'File yang diubah',
         'history.loadMore': 'Muat lebih banyak',
         'history.filter': 'Teks atau hash',
         'detail.files': 'Berkas yang berubah',
@@ -7810,6 +7911,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'Ter-stage {n}',
         'counts.ignored': 'Diabaikan {n}',
         'counts.unstaged': 'Perubahan {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Tidak terlacak {n}',
         'changes.modeOnly': 'मोड',
         'counts.conflicted': 'Konflik {n}',
@@ -7912,6 +8014,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': 'Đã thêm {path} vào .gitignore',
         'toast.gitignoreExists': '{path} đã có trong .gitignore',
         'menu.unstageN': 'Bỏ stage {n} mục',
+        'menu.pendAdd': 'Thêm vào "Chờ commit"',
+        'menu.pendAddN': 'Thêm {n} tệp vào "Chờ commit"',
+        'menu.pendRemove': 'Xóa khỏi "Chờ commit"',
         'menu.discardN': 'Bỏ {n} mục…',
         'menu.cherryN': 'Cherry-pick {n} commit',
         'menu.deleteLocalN': 'Xoá {n} nhánh cục bộ…',
@@ -7974,6 +8079,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'dòng {lines}',
         'send.diffOldLines': 'dòng {lines} (đánh số cũ)',
         'history.empty': 'Kho này chưa có commit nào',
+        'history.columnList': 'Danh sách commit',
+        'history.columnFiles': 'Tệp đã thay đổi',
         'history.loadMore': 'Tải thêm',
         'history.filter': 'Văn bản hoặc hash',
         'detail.files': 'Tệp đã thay đổi',
@@ -8265,6 +8372,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'Đã stage {n}',
         'counts.ignored': 'Bị bỏ qua {n}',
         'counts.unstaged': 'Thay đổi {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'Chưa theo dõi {n}',
         'changes.modeOnly': 'โหมด',
         'counts.conflicted': 'Xung đột {n}',
@@ -8367,6 +8475,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': 'أُضيف {path} إلى .gitignore',
         'toast.gitignoreExists': '{path} موجود بالفعل في .gitignore',
         'menu.unstageN': 'ألغِ تجهيز {n} عنصرًا',
+        'menu.pendAdd': 'إضافة إلى «قيد الانتظار»',
+        'menu.pendAddN': 'إضافة {n} ملف(ات) إلى «قيد الانتظار»',
+        'menu.pendRemove': 'إزالة من «قيد الانتظار»',
         'menu.discardN': 'تجاهل {n} عنصرًا…',
         'menu.cherryN': 'Cherry-pick لـ {n} إيداع',
         'menu.deleteLocalN': 'احذف {n} فرعًا محليًا…',
@@ -8429,6 +8540,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'الأسطر {lines}',
         'send.diffOldLines': 'الأسطر {lines} (ترقيم قديم)',
         'history.empty': 'لا توجد التزامات في هذا المستودع بعد',
+        'history.columnList': 'قائمة الالتزامات',
+        'history.columnFiles': 'الملفات المتغيرة',
         'history.loadMore': 'تحميل المزيد',
         'history.filter': 'نص أو تجزئة',
         'detail.files': 'الملفات المتغيّرة',
@@ -8720,6 +8833,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'مُجهَّز {n}',
         'counts.ignored': 'متجاهَل {n}',
         'counts.unstaged': 'التغييرات {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'غير متعقَّب {n}',
         'changes.modeOnly': 'mod',
         'counts.conflicted': 'التعارضات {n}',
@@ -8822,6 +8936,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': '{path} को .gitignore में जोड़ा गया',
         'toast.gitignoreExists': '{path} पहले से .gitignore में है',
         'menu.unstageN': '{n} आइटम अनस्टेज करें',
+        'menu.pendAdd': '"लंबित" में जोड़ें',
+        'menu.pendAddN': '{n} फ़ाइल(ें) "लंबित" में जोड़ें',
+        'menu.pendRemove': '"लंबित" से हटाएं',
         'menu.discardN': '{n} आइटम छोड़ें…',
         'menu.cherryN': '{n} कमिट चेरी-पिक करें',
         'menu.deleteLocalN': '{n} लोकल ब्रांच हटाएँ…',
@@ -8884,6 +9001,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'पंक्तियाँ {lines}',
         'send.diffOldLines': 'पंक्तियाँ {lines} (पुरानी क्रमांक)',
         'history.empty': 'इस रिपॉज़िटरी में अभी कोई कमिट नहीं है',
+        'history.columnList': 'कमिट सूची',
+        'history.columnFiles': 'बदली हुई फ़ाइलें',
         'history.loadMore': 'और लोड करें',
         'history.filter': 'टेक्स्ट या हैश',
         'detail.files': 'बदली हुई फ़ाइलें',
@@ -9175,6 +9294,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'स्टेज्ड {n}',
         'counts.ignored': 'अनदेखा {n}',
         'counts.unstaged': 'परिवर्तन {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'अनट्रैक्ड {n}',
         'changes.modeOnly': 'mode',
         'counts.conflicted': 'टकराव {n}',
@@ -9277,6 +9397,9 @@ window.__ModuleLoader__.load({
         'toast.gitignoreAdded': 'เพิ่ม {path} ไปยัง .gitignore แล้ว',
         'toast.gitignoreExists': '{path} อยู่ใน .gitignore อยู่แล้ว',
         'menu.unstageN': 'ยกเลิกสเตจ {n} รายการ',
+        'menu.pendAdd': 'เพิ่มไปยัง "รอคอมมิต"',
+        'menu.pendAddN': 'เพิ่ม {n} ไฟล์ไปยัง "รอคอมมิต"',
+        'menu.pendRemove': 'นำออกจาก "รอคอมมิต"',
         'menu.discardN': 'ทิ้ง {n} รายการ…',
         'menu.cherryN': 'Cherry-pick {n} คอมมิต',
         'menu.deleteLocalN': 'ลบแบรนช์ในเครื่อง {n} รายการ…',
@@ -9339,6 +9462,8 @@ window.__ModuleLoader__.load({
         'send.diffNewLines': 'บรรทัด {lines}',
         'send.diffOldLines': 'บรรทัด {lines} (เลขบรรทัดเดิม)',
         'history.empty': 'รีโพซิทอรีนี้ยังไม่มีคอมมิต',
+        'history.columnList': 'รายการคอมมิท',
+        'history.columnFiles': 'ไฟล์ที่เปลี่ยนแปลง',
         'history.loadMore': 'โหลดเพิ่ม',
         'history.filter': 'ข้อความหรือแฮช',
         'detail.files': 'ไฟล์ที่เปลี่ยน',
@@ -9630,6 +9755,7 @@ window.__ModuleLoader__.load({
         'counts.staged': 'สเตจแล้ว {n}',
         'counts.ignored': 'เพิกเฉย {n}',
         'counts.unstaged': 'การเปลี่ยนแปลง {n}',
+        'changes.pending': '待提交 {n}',
         'counts.untracked': 'ไม่ถูกติดตาม {n}',
         'changes.modeOnly': 'mode',
         'counts.conflicted': 'ความขัดแย้ง {n}',
@@ -10911,6 +11037,20 @@ window.__ModuleLoader__.load({
        core, the writeRailFields span and the dock action core all end or start
        elsewhere). Adding a zone is a change to UGIT_ZONE_SPECS only. */
     const LAYOUT_KEY = 'dsh-ide-git.layout.v2'
+    /* 历史 Tab 三栏内部分隔线的线宽（px）——比例换算时要从容器宽里扣除。 */
+    const HISTORY_GUTTER_PX = 9
+    /* 待提交区：按仓库根记一组路径（浏览器本地，不是 git index）。 */
+    const PENDING_KEY = 'dsh-ide-git.pending.v1'
+    function readPendingMap() {
+      try {
+        const raw = localStorage.getItem(PENDING_KEY)
+        const parsed = raw === null ? null : JSON.parse(raw)
+        return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+      } catch (error) { void error; return {} }
+    }
+    function writePendingMap(map) {
+      try { localStorage.setItem(PENDING_KEY, JSON.stringify(map)) } catch (error) { void error }
+    }
     /* Column zones. `id` is the stable key persisted in LAYOUT_KEY; `pane` maps
        a zone onto the existing draggable pane key (PANES_KEY), and `null` means
        the zone is sized by flex or by extraRatios instead. `visible` is the
@@ -10936,10 +11076,10 @@ window.__ModuleLoader__.load({
     const UGIT_TABS = {
       changes: { zones: ['dirTree', 'changes', 'diff'] },
       workspace: { zones: ['branches', 'dirTree', 'changes', 'diff'] },
-      /* 提交图谱 | 提交详情/文件列表 | 该提交内文件的 diff（参考 ugit 的
-         历史 Tab）：点提交 → 右侧详情面板；点详情里的文件 → diff 列展示
-         该文件 patch。 */
-      history: { zones: ['history', 'diff'] },
+      /* 历史 Tab 三栏渐进全部收进 history 区内部自管（提交历史 → +提交详情 →
+         +文件 diff），不再用独立 diff zone——否则没点文件时也会渲染一列空占位。
+         三栏宽度比例由 layout.historyRatios 记忆。 */
+      history: { zones: ['history'] },
     }
     const UGIT_TAB_IDS = Object.keys(UGIT_TABS)
 
@@ -10994,6 +11134,12 @@ window.__ModuleLoader__.load({
         extraRatios[spec.id] = typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 1
           ? value : spec.ratio
       }
+      /* 历史 Tab 三栏（提交历史 | 提交详情 | 文件 diff）的两条内部分隔线比例：
+         ratios[0] 是列表占整宽的比例，ratios[1] 是详情占「剩余宽度」的比例，
+         diff 拿走最后一段。缺省/越界回默认值，旧文档自动兼容。 */
+      const storedHistory = Array.isArray(source.historyRatios) ? source.historyRatios : []
+      const historyRatio = (value, fallback) => (typeof value === 'number' && Number.isFinite(value) && value >= 0.1 && value <= 0.9 ? value : fallback)
+      const historyRatios = [historyRatio(storedHistory[0], 0.42), historyRatio(storedHistory[1], 0.42)]
       return {
         version: 2,
         activeTab: activeTab,
@@ -11002,6 +11148,7 @@ window.__ModuleLoader__.load({
         order: normalizeLayoutOrder(source.order),
         affixes: affixes,
         extraRatios: extraRatios,
+        historyRatios: historyRatios,
       }
     }
 
@@ -14968,11 +15115,25 @@ window.__ModuleLoader__.load({
            Reuse the existing ChangeRow (depth -1 shows its dir segment), just
            skip emitGroup's 分组头. All other callers keep the grouped view. */
         if (props.ugitFlat === true) {
+          /* 会话 cwd 相对仓库根的前缀：cwd 之外的文件（不属于当前工作区）
+             排到列表最下面（用户要求），其余仍按 sortKey 排。repoRoot 未知
+             或 cwd 不是其子目录时不做区分。 */
+          const root = props.base !== undefined && props.base !== null && typeof props.base.repoRoot === 'string' ? props.base.repoRoot : ''
+          const cwd = typeof props.cwd === 'string' ? props.cwd : ''
+          let prefix = ''
+          if (root !== '' && cwd.startsWith(root)) {
+            const rel = cwd.slice(root.length).replace(/^\//, '')
+            prefix = rel === '' ? '' : rel.replace(/\/$/, '') + '/'
+          }
+          const outside = (path) => prefix !== '' && !path.startsWith(prefix)
           const flat = []
           for (const [key, entries] of [['conflicted', conflicted], ['staged', staged], ['unstaged', unstaged], ['untracked', untracked], ['ignored', ignored]]) {
             for (const item of entries) flat.push({ key: key, item: item })
           }
           flat.sort((a, b) => {
+            const oa = outside(a.item.path) ? 1 : 0
+            const ob = outside(b.item.path) ? 1 : 0
+            if (oa !== ob) return oa - ob
             if (sortKey === 'path') return a.item.path.localeCompare(b.item.path)
             if (sortKey === 'name') return baseName(a.item.path).localeCompare(baseName(b.item.path)) || a.item.path.localeCompare(b.item.path)
             if (sortKey === 'status') return (a.item.index + a.item.worktree).localeCompare(b.item.index + b.item.worktree) || a.item.path.localeCompare(b.item.path)
@@ -14980,6 +15141,29 @@ window.__ModuleLoader__.load({
           })
           for (const entry of flat) {
             out.push({ kind: 'row', key: 'flat:' + entry.key + ':' + entry.item.path, h: ITEM_HEIGHTS.row, node: entryRow(entry.key, entry.item, -1) })
+          }
+          /* 待提交区（ugit）：用户标记要一起提交的文件，固定沉在列表最底部。
+             行高亮 + 单行「移出」按钮；提交框提交时以这些路径为 pathspec。 */
+          const pending = props.pendingPaths
+          if (pending !== undefined && pending !== null && pending.size > 0) {
+            out.push({
+              kind: 'group', key: 'pending-head', h: ITEM_HEIGHTS.group,
+              node: E('div', { className: 'dig-group-head dig-group-head-pending' },
+                E('span', null, fill(t('changes.pending'), { n: pending.size }))),
+            })
+            for (const path of pending) {
+              out.push({
+                kind: 'row', key: 'pending:' + path, h: ITEM_HEIGHTS.row,
+                node: E('div', { className: 'dig-row dig-row-file dig-row-pending', title: path, onClick: (event) => { if (typeof props.onDiff === 'function') props.onDiff({ path: path }, 'pending') } },
+                  E('span', { className: 'dig-row-icon dig-tone-accent' }, E(Icon, { name: 'inbox', size: 12 })),
+                  E('span', { className: 'dig-row-label' }, baseName(path)),
+                  E('span', { className: 'dig-row-sub dig-row-dir' }, dirName(path)),
+                  E('button', {
+                    type: 'button', className: 'dig-mini', title: t('menu.pendRemove'),
+                    onClick: (event) => { event.stopPropagation(); if (typeof props.onPendingRemove === 'function') props.onPendingRemove(path) },
+                  }, E(Icon, { name: 'minus', size: 12 }))),
+              })
+            }
           }
           return out
         }
@@ -14989,7 +15173,7 @@ window.__ModuleLoader__.load({
         emitGroup('untracked', fill(t('counts.untracked'), { n: untracked.length }), untracked)
         emitGroup('ignored', fill(t('counts.ignored'), { n: ignored.length }), ignored)
         return out
-      }, [conflicted, staged, unstaged, untracked, ignored, groupBy, foldedDirs, sortKey, t, selection, handleRowClick, props.onUnstageAll, props.onStageAll, props.onFolderMenu, props.ugitFlat])
+      }, [conflicted, staged, unstaged, untracked, ignored, groupBy, foldedDirs, sortKey, t, selection, handleRowClick, props.onUnstageAll, props.onStageAll, props.onFolderMenu, props.ugitFlat, props.cwd, props.base])
       const changeOffsets = useMemo(() => {
         const sums = [0]
         for (const item of changeItems) sums.push(sums[sums.length - 1] + item.h)
@@ -16147,6 +16331,14 @@ window.__ModuleLoader__.load({
       const [detail, setDetail] = useState(null)
       const [selectedHash, setSelectedHash] = useState(null)
       const [selectedPath, setSelectedPath] = useState(null)
+      /* 历史 Tab 三栏：内部分隔线的拖拽态与容器 ref（比例换算要实测宽）。 */
+      const historyZoneRef = useRef(null)
+      const [historyDragging, setHistoryDragging] = useState(null)
+      /* 待提交区（ugit 语义）：用户显式标记要一起提交的路径集合，按仓库根
+         记在浏览器本地 PENDING_KEY。提交时作为 pathspec 传给宿主 —— 只提交
+         这批文件，index 里其它已暂存内容不动。 */
+      const [pendingPaths, setPendingPaths] = useState(() => new Set())
+      const pendingRepoRef = useRef('')
       /* The path the inline diff is actually showing. selectedPath is the row
          the user clicked; a multi-file patch lets LineDiff switch files inside
          the pane, and the header + the right-sidebar hand-off must follow that
@@ -16945,6 +17137,12 @@ window.__ModuleLoader__.load({
            files the banner is asking the user to resolve. */
         if (result !== undefined || method === 'pull' || method === 'push') {
           await refresh()
+          /* 提交成功后清空待提交区：这批路径已经进了提交历史，留在列表里
+             只会误导（再点提交会 pathspec 到已提交的路径）。 */
+          if (method === 'commit' && result !== undefined && pendingRepoRef.current !== '') {
+            setPendingPaths(new Set())
+            writePendingMap(Object.assign(readPendingMap(), { [pendingRepoRef.current]: [] }))
+          }
           /* v0.21.2: the composer pill is a separate tree; without this it only
              learned about an in-panel checkout/commit at the next 30s poll. The
              panel's own watcher skips source 'panel' (refresh already ran). */
@@ -16952,6 +17150,24 @@ window.__ModuleLoader__.load({
         }
         return result
       }, [base, guard, refresh, sessionId, repoRoot])
+
+      /* 待提交区：仓库切换时装载该仓库的路径集合；toggle 增删并即时写回
+         PENDING_KEY。仓库根未知（还没解析出 repo）时空集合。 */
+      useEffect(() => {
+        pendingRepoRef.current = repoRoot === null ? '' : repoRoot
+        if (repoRoot === null) { setPendingPaths(new Set()); return }
+        const stored = readPendingMap()[repoRoot]
+        setPendingPaths(new Set(Array.isArray(stored) ? stored.filter((path) => typeof path === 'string') : []))
+      }, [repoRoot])
+      const togglePending = useCallback((path, add) => {
+        setPendingPaths((previous) => {
+          const next = new Set(previous)
+          if (add === true) next.add(path)
+          else next.delete(path)
+          if (pendingRepoRef.current !== '') writePendingMap(Object.assign(readPendingMap(), { [pendingRepoRef.current]: [...next] }))
+          return next
+        })
+      }, [])
 
       /* Issue #25: one merge verb, four intents. --no-commit alone is refused by
          git when the merge could fast-forward, so that mode always carries
@@ -17925,6 +18141,7 @@ window.__ModuleLoader__.load({
           openMenuAt(event, [
             groups.other.length > 0 ? { id: 'stage', icon: 'plus', tone: 'success', label: fill(t('menu.stageN'), { n: groups.other.length }), run: () => { void run('stage', { paths: groups.other }) } } : null,
             groups.staged.length > 0 ? { id: 'unstage', icon: 'minus', tone: 'warn', label: fill(t('menu.unstageN'), { n: groups.staged.length }), run: () => { void run('unstage', { paths: groups.staged }) } } : null,
+            groups.other.length > 0 ? { id: 'pendAdd', icon: 'inbox', tone: 'accent', label: fill(t('menu.pendAddN'), { n: groups.other.length }), run: () => { for (const path of groups.other) togglePending(path, true) } } : null,
             { id: 'discard', icon: 'undo', tone: 'danger', danger: true, label: fill(t('menu.discardN'), { n: groups.tracked.length + groups.untracked.length }), run: () => openDiscardManyDialog() },
             null,
             { id: 'copy', icon: 'tag', tone: 'secondary', label: fill(t('menu.copyPathsN'), { n: allPaths.length }), run: () => copyValues(allPaths) },
@@ -17939,13 +18156,17 @@ window.__ModuleLoader__.load({
           group === 'staged'
             ? { id: 'unstage', icon: 'minus', tone: 'warn', label: t('action.unstage'), run: () => { void run('unstage', { paths: [item.path] }) } }
             : { id: 'stage', icon: 'plus', tone: 'success', label: t('action.stage'), run: () => { void run('stage', { paths: [item.path] }) } },
+          /* 待提交区（ugit）：已加入的行给「移出」，其余给「添加至待提交」。 */
+          pendingPaths.has(item.path) === true
+            ? { id: 'pendRemove', icon: 'minus', tone: 'warn', label: t('menu.pendRemove'), run: () => togglePending(item.path, false) }
+            : { id: 'pendAdd', icon: 'inbox', tone: 'accent', label: t('menu.pendAdd'), run: () => togglePending(item.path, true) },
           { id: 'discard', icon: 'undo', tone: 'danger', label: t('action.discard'), danger: true, run: () => setDialog({ kind: 'discard', item: item, group: group }) },
           ...(group === 'untracked' ? [{ id: 'gitignore', icon: 'eyeOff', tone: 'warn', label: t('menu.addGitignore'), run: () => addToGitignore(item.path, false) }] : []),
           null,
           { id: 'copy', icon: 'tag', tone: 'secondary', label: t('action.copyPath'), run: () => { copyText(item.path) } },
         ]
         openMenuAt(event, items)
-      }, [showDiff, run, t, openMenuAt, sendFileReferenceToChat, sendToComposer, changeSelection, changeSelectionGroups, openDiscardManyDialog, addToGitignore, copyValues, openFileItem])
+      }, [showDiff, run, t, openMenuAt, sendFileReferenceToChat, sendToComposer, changeSelection, changeSelectionGroups, openDiscardManyDialog, addToGitignore, copyValues, openFileItem, togglePending, pendingPaths])
 
       /* The commit-detail file list shares the working-tree row menu, minus the
          staging verbs: a committed file's diff replays against its commit. */
@@ -18308,64 +18529,107 @@ window.__ModuleLoader__.load({
         E('button', { type: 'button', className: 'dig-link', onClick: () => setNote(null) }, t('error.dismiss')))
 
 
-      /* 历史 Tab 参照 ugit：点提交后提交列表保持可见（左），右侧是详情
-         面板；详情里的文件单击/双击都在 diff 列打开该文件的 patch。 */
+      /* 历史 Tab 参照 ugit 的渐进三栏，全部收进 history 区内部自管：
+         一栏 —— 只显示提交历史，占满；
+         两栏 —— 双击提交后，右侧出现提交详情面板（提交记录信息+变更文件列表）；
+         三栏 —— 单击详情里的文件后，第三栏展示该文件的 split diff。
+         两条内部分隔线宽度可拖，比例记忆在 layout.historyRatios。 */
+      const historyListProps = {
+        t: t, commits: commits, commitsLoaded: commitsLoaded, hasMore: hasMore, busy: busy, selectedHash: selectedHash,
+        /* Read per render: the row Config subscription re-renders this
+           component, so a settings-card change applies without a reload. */
+        dateFormat: readDateFormat(),
+        hideSearch: compact, pathFilter: pathFilter, openMenuAt: openMenuAt,
+        branches: branches, scope: browseRev, onScopeChange: setHistoryScope,
+        onPathFilter: (value) => setPathFilter(value),
+        onSelect: (commit) => { void selectCommit(commit) },
+        onMenu: commitMenu,
+        onLoadMore: () => { void guard(() => loadCommits(commits.length)) },
+        /* ---- multi-select (issue #13) ---- */
+        pickedHashes: pickedCommits,
+        onPicksChange: onCommitPicks,
+        onSelectAll: (hashes) => onCommitPicks(new Set(hashes)),
+        onKeyDown: onHistoryKeyDown,
+        mergeAnchor: mergeAnchor,
+        base: base,
+        request: request,
+      }
+      const historyDetailNode = E(CommitDetail, {
+        t: t, detail: detail, selectedPath: selectedPath,
+        onBack: () => { setView('history'); setSelectedPath(null); resetDiff() },
+        /* 单击与双击都在第三栏打开该文件的 patch（ugit 的点击模型：文件
+           列表是 diff 的目录，点开即看）。这里刻意不走 showDiff —— 它会把
+           commit 文件交给外部预览（diffPlacement=sidebar 时），第三栏就永远
+           不出现；详情场景明确要求面板内 diff，直接 setSelectedPath +
+           openDiff 内联拉 patch。 */
+        onSelectFile: (file) => { setSelectedPath(file.path); setSplitTab('diff'); void openDiff({ hash: detail === null || detail === undefined ? undefined : detail.hash, path: file.path }) },
+        onOpenFile: (file) => { setSelectedPath(file.path); setSplitTab('diff'); void openDiff({ hash: detail === null || detail === undefined ? undefined : detail.hash, path: file.path }) },
+        onFileMenu: detailFileMenu,
+      })
+      /* 三栏宽度：ratios[0] = 列表占总宽，ratios[1] = 详情占剩余宽，diff 拿
+         走最后一段。拖动经 onHistoryRatio 写回 LAYOUT_KEY；三条栏用 px 换算
+         成比例需要容器宽——Gutter 上报的是 px，除以 historyZoneRef 实测宽。 */
+      const historyRatios = layout.historyRatios
+      const onHistoryRatio = (index, px) => {
+        const host = historyZoneRef.current
+        const total = host !== null && typeof host.getBoundingClientRect === 'function' ? host.getBoundingClientRect().width : 0
+        if (!(total > 0)) return
+        if (index === 0) {
+          const listRatio = Math.min(0.9, Math.max(0.1, px / total))
+          onLayoutChange(Object.assign({}, layout, { historyRatios: [listRatio, historyRatios[1]] }))
+        } else {
+          const listPx = total * historyRatios[0]
+          const rest = Math.max(1, total - listPx - HISTORY_GUTTER_PX)
+          const detailRatio = Math.min(0.9, Math.max(0.1, px / rest))
+          onLayoutChange(Object.assign({}, layout, { historyRatios: [historyRatios[0], detailRatio] }))
+        }
+      }
+      const historyGutter = (index, nameKey) => {
+        const ratios = historyRatios
+        const width = index === 0
+          ? Math.round((paneBox.width || 0) * ratios[0])
+          : Math.round(((paneBox.width || 0) - (paneBox.width || 0) * ratios[0] - HISTORY_GUTTER_PX * 2) * ratios[1])
+        return E(Gutter, {
+          key: 'h-gutter-' + index,
+          t: t, nameKey: nameKey, vertical: true, side: 'prev',
+          active: historyDragging === index,
+          value: Math.max(80, width), min: 80, max: 4000,
+          onStart: () => setHistoryDragging(index),
+          onDrag: (px) => onHistoryRatio(index, px),
+          onEnd: () => setHistoryDragging(null),
+          onReset: () => onLayoutChange(Object.assign({}, layout, { historyRatios: [0.42, 0.42] })),
+        })
+      }
+      const listNode = E('div', { className: 'dig-hcol dig-hcol-list', style: { flex: '0 0 auto', width: String(Math.round(historyRatios[0] * 100)) + '%' } },
+        E(HistoryList, Object.assign({}, historyListProps, { hideSearch: compact })))
+      const detailNode = E('div', { className: 'dig-hcol dig-hcol-detail', style: { flex: '1 1 auto', minWidth: '200px' } }, historyDetailNode)
+      /* 第三栏：选中文件时显示该文件的 diff；patch 为空且未加载时是中性占位
+         （例如刚切到三栏的那一帧），绝不显示「没有可显示的文本差异」。 */
+      /* 第三栏：选中文件时展示该文件 patch。这里刻意不调用 diffPaneOf ——
+         它声明在本段之后（依赖 diffPathCrumbs/sidebarBlocked），渲染期前向
+         引用会 TDZ（真机复现：点详情文件整个面板被错误边界吞掉）。面板级
+         diff 列与历史第三栏并存时各自独立渲染，互不依赖。 */
+      const fileDiffNode = selectedPath === null
+        ? null
+        : E('div', { className: 'dig-hcol dig-hcol-diff' },
+            patch === '' && patchLoading === false
+              ? (patchLoading === true ? E('div', { className: 'dig-empty' }, t('diff.loading')) : E('div', { className: 'dig-empty' }, t('changes.title')))
+              : E('div', { className: 'dig-diff-pane dig-diff-pane-fill', 'data-pane': 'diff' },
+                  E('div', { className: 'dig-diff-head' },
+                    E('span', { className: 'dig-mono dig-diff-path' }, selectedPath === null ? '' : selectedPath),
+                    E('button', {
+                      type: 'button', className: 'dig-icon-btn', title: t('toast.close'),
+                      onClick: () => { resetDiff(); setSelectedPath(null) },
+                    }, E(Icon, { name: 'close', size: 14 }))),
+                  E(DiffBody, { patch: patch, loading: patchLoading, t: t, onActiveFile: setDiffPath })))
       const historyPane = view === 'detail'
-        ? E('div', { className: 'dig-history-split' },
-            E('div', { className: 'dig-history-split-list' },
-              E(HistoryList, {
-                t: t, commits: commits, commitsLoaded: commitsLoaded, hasMore: hasMore, busy: busy, selectedHash: selectedHash,
-                dateFormat: readDateFormat(),
-                hideSearch: compact, pathFilter: pathFilter, openMenuAt: openMenuAt,
-                branches: branches, scope: browseRev, onScopeChange: setHistoryScope,
-                onPathFilter: (value) => setPathFilter(value),
-                onSelect: (commit) => { void selectCommit(commit) },
-                onMenu: commitMenu,
-                onLoadMore: () => { void guard(() => loadCommits(commits.length)) },
-                pickedHashes: pickedCommits,
-                onPicksChange: onCommitPicks,
-                onSelectAll: (hashes) => onCommitPicks(new Set(hashes)),
-                onKeyDown: onHistoryKeyDown,
-                mergeAnchor: mergeAnchor,
-                base: base,
-                request: request,
-              })),
-            E(CommitDetail, {
-              t: t, detail: detail, selectedPath: selectedPath,
-              onBack: () => { setView('history'); setSelectedPath(null); resetDiff() },
-              /* 单击与双击都在 diff 列打开该文件的 patch（ugit 的点击
-                 模型：文件列表是 diff 的目录，不需要先选中再看）。 */
-              onSelectFile: (file) => { setSelectedPath(file.path); showDiff({ hash: detail === null || detail === undefined ? undefined : detail.hash, subject: detail === null || detail === undefined ? '' : detail.subject, path: file.path }) },
-              onOpenFile: (file) => {
-                setSelectedPath(file.path)
-                showDiff({
-                  hash: detail === null || detail === undefined ? undefined : detail.hash,
-                  subject: detail === null || detail === undefined ? '' : detail.subject,
-                  path: file.path,
-                })
-              },
-              onFileMenu: detailFileMenu,
-            }))
-        : E(HistoryList, {
-            t: t, commits: commits, commitsLoaded: commitsLoaded, hasMore: hasMore, busy: busy, selectedHash: selectedHash,
-            /* Read per render: the row Config subscription re-renders this
-               component, so a settings-card change applies without a reload. */
-            dateFormat: readDateFormat(),
-            hideSearch: compact, pathFilter: pathFilter, openMenuAt: openMenuAt,
-            branches: branches, scope: browseRev, onScopeChange: setHistoryScope,
-            onPathFilter: (value) => setPathFilter(value),
-            onSelect: (commit) => { void selectCommit(commit) },
-            onMenu: commitMenu,
-            onLoadMore: () => { void guard(() => loadCommits(commits.length)) },
-            /* ---- multi-select (issue #13) ---- */
-            pickedHashes: pickedCommits,
-            onPicksChange: onCommitPicks,
-            onSelectAll: (hashes) => onCommitPicks(new Set(hashes)),
-            onKeyDown: onHistoryKeyDown,
-            mergeAnchor: mergeAnchor,
-            base: base,
-            request: request,
-          })
+        ? E('div', { className: 'dig-history-columns', ref: historyZoneRef },
+            listNode,
+            historyGutter(0, 'history.columnList'),
+            detailNode,
+            selectedPath === null ? null : historyGutter(1, 'history.columnFiles'),
+            fileDiffNode)
+        : E(HistoryList, historyListProps)
 
       /* The compact chrome renders the diff INSTEAD of the changes list (the
          narrow right column has no neighbour to show it beside), so it needs a
@@ -18679,12 +18943,19 @@ window.__ModuleLoader__.load({
         foldedDirs: foldedDirs, onFoldedDirs: setFoldedDirs,
         onMoreMenu: moreMenu,
         request: request, cwd: cwd, sessionId: sessionId, commitSettings: commitSettings, base: base,
+        pendingPaths: pendingPaths, onPendingRemove: (path) => togglePending(path, false),
         showIgnored: showIgnored,
         onToggleIgnored: () => setShowIgnored((value) => !value),
         // Commit-and-push carries the confirm flag with it: the button already
         // says exactly what it will publish, so the host guard is satisfied by
         // the click itself rather than by a second dialog.
-        onCommit: (message, amend, push) => run('commit', { message: message, amend: amend, push: push === true, confirm: push === true }),
+        /* 待提交区非空时提交按钮只提交这批文件（pathspec commit）；否则维持
+           原语义提交整个 index。 */
+        onCommit: (message, amend, push) => {
+          const paths = [...pendingPaths]
+          if (paths.length > 0) return run('commit', { message: message, amend: amend, push: push === true, confirm: push === true, paths: paths, pathspec: true })
+          return run('commit', { message: message, amend: amend, push: push === true, confirm: push === true })
+        },
         onStage: (item) => { void run('stage', { paths: [item.path] }) },
         onUnstage: (item) => { void run('unstage', { paths: [item.path] }) },
         onStageAll: (entries) => { void run('stage', { paths: entries.map((entry) => entry.path) }) },
@@ -19788,9 +20059,15 @@ window.__ModuleLoader__.load({
          filter bar, and painting from the wrong rect was the v0.19.2 drift. */
       '.dig-history{display:flex;flex-direction:column;min-height:0;flex:1;position:relative}',
       /* 历史 Tab 点提交后的左右布局：提交列表保持可见（参考截图2）。 */
-      '.dig-history-split{display:flex;min-height:0;flex:1;gap:8px}',
-      '.dig-history-split-list{width:min(46%,420px);min-width:220px;flex:none;min-height:0;display:flex;flex-direction:column}',
-      '.dig-history-split .dig-detail{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:auto}',
+      /* 历史 Tab 渐进三栏：列表 | (gutter) 详情 | (gutter) diff。宽度由
+         inline style（historyRatios 换算的 flex-basis）控制，CSS 只管方向
+         与最小可读尺寸。 */
+      '.dig-history-columns{display:flex;min-height:0;flex:1;width:100%}',
+      '.dig-hcol{min-width:120px;min-height:0;display:flex;flex-direction:column;overflow:hidden}',
+      '.dig-hcol-detail{border-left:1px solid var(--dsw-alias-hairline,var(--dsw-alias-border-l1));overflow:auto}',
+      '.dig-hcol-diff{min-width:220px;flex:1;border-left:1px solid var(--dsw-alias-hairline,var(--dsw-alias-border-l1))}',
+      '.dig-hcol-diff .dig-diff-pane{flex:1;min-height:0}',
+      '.dig-hcol-detail .dig-detail{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:visible}',
       '.dig-history-scroll{flex:1;overflow:auto}',
       // The row's left edge follows the bars above it (filter row / compact
       // switch: 4px 6px padding), so the time column and the graph start on the

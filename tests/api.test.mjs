@@ -1621,3 +1621,24 @@ test('gitignoreAdd anchors, escapes and stays idempotent', async () => {
   assert.equal(readFileSync(join(repo, '.gitignore'), 'utf8'), 'a\r\nb\r\n/crlf.txt\r\n',
     'a CRLF .gitignore keeps its own line ending')
 })
+
+test('commit with pathspec commits exactly the given paths (待提交区, v0.37.3)', async () => {
+  // index 里先暂存 A；待提交区只提交 B —— A 必须保持已暂存、不被顺带提交。
+  writeFileSync(join(repo, 'pending-b.txt'), 'b1\n')
+  writeFileSync(join(repo, 'other-a.txt'), 'a1\n')
+  execFileSync('git', ['-C', repo, 'add', 'other-a.txt'])
+  const { status, body } = await call('commit', { cwd: repo, message: 'only b', paths: ['pending-b.txt'], pathspec: true })
+  assert.equal(status, 200)
+  assert.equal(body.ok, true)
+  // 提交只含 B
+  const show = execFileSync('git', ['-C', repo, 'show', '--name-only', '--format=', 'HEAD']).toString().trim().split('\n')
+  assert.deepEqual(show, ['pending-b.txt'])
+  // A 仍是已暂存（index 未被动过）
+  const st = execFileSync('git', ['-C', repo, 'status', '--porcelain', 'other-a.txt']).toString().trim()
+  assert.equal(st, 'A  other-a.txt')
+  // 清理
+  execFileSync('git', ['-C', repo, 'reset', '-q', 'HEAD', '--', 'other-a.txt'])
+  rmSync(join(repo, 'other-a.txt'), { force: true })
+  rmSync(join(repo, 'pending-b.txt'), { force: true })
+  execFileSync('git', ['-C', repo, 'reset', '-q', '--hard'])
+})

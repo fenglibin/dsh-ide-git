@@ -2772,8 +2772,8 @@ test('ugit tabs reach their core columns and legacy hidden docs migrate (v0.37.0
   assert.deepEqual(core.UGIT_TABS.changes.zones, ['dirTree', 'changes', 'diff'])
   assert.deepEqual(core.UGIT_TABS.workspace.zones, ['branches', 'dirTree', 'changes', 'diff'],
     'the workspace tab reaches the branch tree')
-  assert.deepEqual(core.UGIT_TABS.history.zones, ['history', 'diff'],
-    'the history tab shows the graph/list plus a diff column for the picked commit file (ugit 布局, 用户要求)')
+  assert.deepEqual(core.UGIT_TABS.history.zones, ['history'],
+    'the history tab keeps its own progressive columns inside the history zone (no empty diff zone)')
   assert.match(client, /candidates\.indexOf\(id\) < 0\) return false/,
     'UgitBody treats the tab candidate set as a hard boundary')
   assert.match(client, /legacyDefault !== true/, 'the migration guard is present')
@@ -2823,15 +2823,33 @@ test('follow-up UX fixes: no composer pill, tabbed settings, prefs-only split, u
 test('history detail split view + mode-only badge (v0.37.2)', () => {
   // 参考 ugit 截图2/3: 点提交 → 提交列表保持可见，右侧是详情面板；
   // 点详情里的文件 → diff 列显示该文件 patch。
-  assert.match(client, /className: 'dig-history-split'/, 'the history detail view keeps the commit list visible')
-  assert.match(client, /className: 'dig-history-split-list'/, 'the left column is the commit list')
-  assert.match(client, /history: \{ zones: \['history', 'diff'\] \}/, 'the history tab includes the diff column')
-  assert.match(client, /onSelectFile: \(file\) => \{ setSelectedPath\(file\.path\); showDiff\(/,
-    'a single click on a detail file opens its diff in the diff column')
+  assert.match(client, /className: 'dig-history-columns'/, 'the history zone renders the progressive columns')
+  assert.match(client, /className: 'dig-hcol dig-hcol-list'/, 'the first column is the commit list')
+  assert.match(client, /selectedPath === null \? null : historyGutter\(1/, 'the third column (file diff) only appears after a file is picked')
   // 纯权限(mode)变更: numstat 0/0, 必须显示中性徽标而不是空着。
   assert.match(client, /className: 'dig-stat-mode'/, 'mode-only files carry a neutral badge')
   assert.match(client, /t\('changes\.modeOnly'\)/, 'the badge uses a dictionary key')
   assert.equal(client.indexOf("'changes.modeOnly': '权限'") > 0, true, 'the zh dictionary defines it')
   const locales = (client.match(/'changes\.modeOnly': '/g) || []).length
   assert.equal(locales, 21, 'all 21 dictionaries define changes.modeOnly')
+})
+
+test('history progressive columns + outside-file sink + pending area (v0.37.3)', () => {
+  // 1) 历史 Tab 三栏渐进(列表→+详情→+文件diff),两条内部分隔线比例记忆。
+  assert.match(client, /const historyRatios = \[historyRatio\(storedHistory/, 'normalizeLayout remembers the two history column ratios')
+  assert.match(client, /className: 'dig-history-columns', ref: historyZoneRef/, 'the history columns container is measured')
+  assert.match(client, /onDrag: \(px\) => onHistoryRatio\(index, px\)/, 'the internal gutters drive the remembered ratios')
+  assert.match(client, /const HISTORY_GUTTER_PX = 9/, 'the gutter width is a constant')
+  // 2) 会话 cwd 之外的文件沉到变更列表最下面。
+  assert.match(client, /const outside = \(path\) => prefix !== '' && !path\.startsWith\(prefix\)/, 'files outside the session cwd sink to the bottom')
+  assert.match(client, /if \(oa !== ob\) return oa - ob/, 'the sink wins over the chosen sort key')
+  // 3) 待提交区: 右键加/移出、列表底部独立分组、提交按钮走 pathspec。
+  assert.match(client, /const PENDING_KEY = 'dsh-ide-git\.pending\.v1'/, 'the pending set is remembered per browser')
+  assert.match(client, /id: 'pendAdd', icon: 'inbox'/, 'the row menu offers 添加至待提交')
+  assert.match(client, /id: 'pendAdd', icon: 'inbox', tone: 'accent', label: fill\(t\('menu\.pendAddN'\)/, 'multi-select adds N files at once')
+  assert.match(client, /className: 'dig-group-head dig-group-head-pending'/, 'the pending section renders at the bottom of the changes list')
+  assert.match(client, /paths: paths, pathspec: true/, 'the commit button commits exactly the pending paths')
+  assert.match(read('src/host/write.js'), /if \(payload\.pathspec === true && paths\.length > 0\) args\.push\('--', \.\.\.paths\)/, 'the host commit supports a pathspec without disturbing the rest of the index')
+  assert.equal((client.match(/'changes\.pending': '/g) || []).length, 21, 'all 21 dictionaries define changes.pending')
+  assert.equal((client.match(/'menu\.pendAdd': '/g) || []).length, 21, 'all 21 dictionaries define menu.pendAdd')
 })

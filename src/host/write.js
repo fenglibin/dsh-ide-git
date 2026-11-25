@@ -203,6 +203,11 @@ async function commit(payload) {
   const args = ['commit', '-m', message]
   if (payload.amend === true) args.push('--amend')
   if (payload.signoff === true) args.push('--signoff')
+  /* 指定 pathspec: true + paths = 客户端的「待提交区」（ugit 语义）：先 add
+     保证新增文件可提交，再带 pathspec 提交 —— 只提交这批路径的当前内容，
+     index 里其它已暂存的条目原样保留，不会被顺带提交。不带 pathspec 的
+     paths（如「提交所有」对话框）维持原语义：预暂存后提交整个 index。 */
+  if (payload.pathspec === true && paths.length > 0) args.push('--', ...paths)
   const out = await git(root, args)
   const result = { output: out.trim() }
   if (payload.push === true) {
