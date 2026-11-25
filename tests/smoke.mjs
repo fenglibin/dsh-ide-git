@@ -2862,3 +2862,35 @@ test('flat change rows hide the directory segment (v0.37.4)', () => {
   assert.match(client, /prev\.hideDir === next\.hideDir/, 'the ChangeRow memo reacts to hideDir flips')
   assert.doesNotMatch(client, /E\('span', \{ className: 'dig-row-label' \}, baseName\(path\)\),[\s\S]{0,80}dig-row-dir/, 'pending rows have no dir segment either')
 })
+
+test('multi-select pending, pend-all menu, no selection bar / amend checkbox, subject-first commits (v0.37.5)', () => {
+  // 1) 多选右键已有「添加 N 个文件至待提交」（v0.37.3）；本轮确认保留。
+  assert.match(client, /id: 'pendAdd', icon: 'inbox', tone: 'accent', label: fill\(t\('menu\.pendAddN'\)/, 'multi-select right-click adds N files to the pending area')
+  // 2) ⋯ 菜单「全部添加到待提交」复用 pendAddN 文案, 零新键。
+  assert.match(client, /id: 'pend-all', icon: 'inbox'[\s\S]{0,140}t\('menu\.pendAddN'\)/, 'the more-menu offers add-ALL-files-to-pending')
+  // 3) 选择操作条不再渲染（多选机制与右键动作保留）。
+  assert.doesNotMatch(client, /const selectionBar = /, 'the selection action bar is gone')
+  assert.doesNotMatch(client, /dig-selection-bar/, 'no selection-bar CSS remains')
+  assert.match(client, /onBulkStage: bulkStageChanges/, 'bulk staging still exists for the row menu')
+  // 4) 提交框的「修补」checkbox 删除（⋯ 菜单的 amend 对话框入口保留）。
+  assert.doesNotMatch(client, /checked: amend, onChange: \(event\) => setAmend/, 'the commit-box amend checkbox is gone')
+  assert.match(client, /more\.commitStagedAmend/, 'the ⋯-menu amend entries remain')
+  // 5) 提交行: 说明第1列、日期第2列、作者第3列（窄栏优先展示说明）。
+  const row = client.slice(client.indexOf('function CommitRow'), client.indexOf('function sinceThreshold'))
+  const subj = row.indexOf("className: 'dig-commit-subject'")
+  const date = row.indexOf("className: 'dig-commit-date'")
+  const author = row.indexOf("className: 'dig-commit-author'")
+  assert.ok(subj >= 0 && subj < date && date < author, 'commit row order is subject → date → author')
+  assert.match(client, /\.dig-commit-subject\{flex:1 1 auto/, 'the subject column takes the free width')
+})
+
+test('multi-select is actually usable in the flat changes list (v0.37.6)', () => {
+  // 真机复现的 bug: ugitFlat 行 key 曾是 'flat:group:path'，而
+  // handleRowClick / orderedRowKeys / changeSelectionGroups 用 'group:path'
+  // → Shift 范围 indexOf 恒 -1、多选退化成单选。统一 key 后修复。
+  assert.match(client, /out\.push\(\{ kind: 'row', key: entry\.key \+ ':' \+ entry\.item\.path/, 'flat rows use the same group:path key as the click handler')
+  assert.doesNotMatch(client, /key: 'flat:' \+/, 'no divergent flat-row key remains')
+  assert.match(client, /entry\.key\.indexOf\('pending:'\) !== 0/, 'pending rows are excluded from the shift-range key list')
+  // 选中多个后右键任意行都作用于整组。
+  assert.match(client, /if \(changeSelection\.size > 1\) \{/, 'a multi-selection right-click acts on the whole set')
+})

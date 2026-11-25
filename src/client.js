@@ -14891,7 +14891,9 @@ window.__ModuleLoader__.load({
         const keys = []
         if (items === null) return keys
         for (const entry of items) {
-          if (entry.kind === 'row' && entry.key.indexOf('ignored:') !== 0) keys.push(entry.key)
+          /* 待提交分组行用 'pending:' 前缀，不属于 git 状态组，不能参与
+             Shift 范围的 group:path 索引（否则 indexOf 错位把多选打回单选）。 */
+          if (entry.kind === 'row' && entry.key.indexOf('ignored:') !== 0 && entry.key.indexOf('pending:') !== 0) keys.push(entry.key)
         }
         return keys
       }
@@ -15150,7 +15152,7 @@ window.__ModuleLoader__.load({
             return 0
           })
           for (const entry of flat) {
-            out.push({ kind: 'row', key: 'flat:' + entry.key + ':' + entry.item.path, h: ITEM_HEIGHTS.row, node: entryRow(entry.key, entry.item, -1) })
+            out.push({ kind: 'row', key: entry.key + ':' + entry.item.path, h: ITEM_HEIGHTS.row, node: entryRow(entry.key, entry.item, -1) })
           }
           /* 待提交区（ugit）：用户标记要一起提交的文件，固定沉在列表最底部。
              行高亮 + 单行「移出」按钮；提交框提交时以这些路径为 pathspec。 */
@@ -15269,9 +15271,9 @@ window.__ModuleLoader__.load({
               }, t('changes.aiUndo'))),
             aiNoticeRow,
             E('div', { className: 'dig-commit-actions' },
-              E('label', { className: 'dig-check' },
-                E('input', { type: 'checkbox', checked: amend, onChange: (event) => setAmend(event.target.checked) }),
-                E('span', null, t('changes.amend'))),
+              /* 「修补」checkbox 已删（用户要求）：它把本次提交变成
+                 --amend 改写上次提交，与 ⋯ 菜单里专门的「修补上次提交」
+                 入口重复且易误触。amend 状态保留（⋯ 菜单的对话框仍用它）。 */
               E('button', {
                 type: 'button', className: 'dig-btn dig-btn-primary',
                 disabled: message.trim() === '' || props.busy === true,
@@ -15311,13 +15313,9 @@ window.__ModuleLoader__.load({
         }, E(Icon, { name: 'more', size: 18 })))
       /* The selection action bar: visible only while a multi-select exists, so
          the mouse-only path (no right-click, no keyboard) keeps full power. */
-      const selectionBar = selection.size === 0 ? null : E('div', { className: 'dig-selection-bar', 'data-cordis-panel': '' },
-        E('span', { className: 'dig-selection-count' }, fill(t('selection.count'), { n: selection.size })),
-        props.onBulkStage === undefined ? null : E('button', { type: 'button', className: 'dig-link', onClick: () => props.onBulkStage() }, t('action.stage')),
-        props.onBulkUnstage === undefined ? null : E('button', { type: 'button', className: 'dig-link', onClick: () => props.onBulkUnstage() }, t('action.unstage')),
-        props.onBulkDiscard === undefined ? null : E('button', { type: 'button', className: 'dig-link dig-link-danger', onClick: () => props.onBulkDiscard() }, t('action.discard')),
-        props.onCopySelection === undefined ? null : E('button', { type: 'button', className: 'dig-link', onClick: () => props.onCopySelection() }, t('selection.copyPaths')),
-        E('button', { type: 'button', className: 'dig-link', onClick: () => setSelection(new Set()) }, t('selection.clear')))
+      /* 用户要求去掉「已选 N 项 暂存/取消暂存/丢弃更改/复制路径/清除选择」的选择操作条：
+         多选的入口与动作全部保留（Shift/Ctrl 行点击 + 行右键菜单 + Ctrl+A/Del），
+         只是这条占一整行的按钮条不再渲染。 */
       return E('div', { className: 'dig-changes', ref: changesHostRef },
         aiConfirmDialog,
         head,
@@ -15357,7 +15355,6 @@ window.__ModuleLoader__.load({
              shrinks the viewport bottom edge without moving the list content
              (scrollTop untouched), so the v0.18.3 dblclick precision holds —
              and nothing on the list (group head, rows) is ever covered. */
-          selectionBar,
           props.commitBoxHidden === true ? null : composer),
         E(MarqueeBox, { box: changeMarquee.box }))
     }
@@ -15613,6 +15610,9 @@ window.__ModuleLoader__.load({
         onDoubleClick: () => props.onOpenDetail(commit),
         onContextMenu: (event) => { event.preventDefault(); props.onMenu(event, commit) },
       },
+        /* 列序（用户要求）：说明第 1 列、日期第 2 列、作者第 3 列 —— 窄栏
+           下优先展示更多提交说明；图谱与分支装饰跟在后面对齐。 */
+        E('span', { className: 'dig-commit-subject', title: commit.subject }, commit.subject),
         E('span', {
           className: 'dig-commit-date',
           'data-format': absoluteDate ? 'absolute' : 'relative',
@@ -15649,7 +15649,6 @@ window.__ModuleLoader__.load({
             props.openMenuAt(event, entries)
           },
         }, '+' + String(hidden + folded.length)) : null,
-        E('span', { className: 'dig-commit-subject', title: commit.subject }, commit.subject),
         E('span', { className: 'dig-commit-fill' }))
     }, (prev, next) => prev.commit === next.commit && prev.row === next.row && prev.selected === next.selected && prev.t === next.t)
 
@@ -18143,7 +18142,9 @@ window.__ModuleLoader__.load({
       const changeMenu = useCallback((event, item, group) => {
         /* Multi-select: right-clicking a row that belongs to the selection
            acts on the WHOLE selection (stage N / unstage N / discard N). */
-        if (changeSelection.has(group + ':' + item.path) === true && changeSelection.size > 1) {
+        /* 选中多个后右键任意行都对整组生效（ugit 语义，用户要求）：此前还
+           要求右键行必须属于选择集，稍微点偏就退化成单选菜单。 */
+        if (changeSelection.size > 1) {
           const groups = changeSelectionGroups()
           const allPaths = groups.staged.concat(groups.other)
           openMenuAt(event, [
@@ -18823,6 +18824,9 @@ window.__ModuleLoader__.load({
           /* —— view (VS Code: 以列表形式查看 / 查看和排序 ▸) —— */
           { id: 'view-flat', icon: 'commit', tone: 'secondary', label: t('changes.groupFlat'), active: groupBy === 'flat', run: () => setGroupBy('flat') },
           { id: 'view-dir', icon: 'folder', tone: 'secondary', label: t('changes.groupDir'), active: groupBy === 'dir', run: () => setGroupBy('dir') },
+          /* 全部添加到待提交（用户要求）：一次把所有变更文件标记进待提交区，
+             复用 menu.pendAddN 的「添加 N 个文件至“待提交”」文案，零新键。 */
+          allChangePaths.length > 0 ? { id: 'pend-all', icon: 'inbox', tone: 'accent', label: fill(t('menu.pendAddN'), { n: allChangePaths.length }), run: () => { for (const path of allChangePaths) togglePending(path, true) } } : null,
           { id: 'view-sort', icon: 'compare', tone: 'secondary', label: t('more.sort'), items: [
             { id: 'sort-git', label: t('more.sortGit'), active: sortKey === 'git', run: sort('git') },
             { id: 'sort-path', label: t('more.sortPath'), active: sortKey === 'path', run: sort('path') },
@@ -20111,8 +20115,8 @@ window.__ModuleLoader__.load({
          width keeps every row's author/graph columns aligned. */
       '.dig-commit-date[data-format="absolute"]{width:116px}',
       '.dig-commit-author{color:var(--dsw-alias-label-secondary);flex:none;width:96px;overflow:hidden;text-overflow:ellipsis;font-weight:500}',
-      '.dig-commit-subject{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}',
-      '.dig-commit-fill{flex:1 1 0;min-width:0}',
+      '.dig-commit-subject{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}',
+      '.dig-commit-fill{flex:0 0 8px;min-width:0}',
       '.dig-ref{font-size:10px;padding:0 5px;border-radius:999px;corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);flex:none;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}',
       '.dig-ref-head{color:var(--dsw-alias-state-success-primary)}',
       '.dig-ref-local{color:var(--dsw-alias-brand-primary)}',
@@ -20175,10 +20179,6 @@ window.__ModuleLoader__.load({
          same aliases to the dark theme's own sources (layer-1→bluish-875,
          layer-2→bluish-850). Without that override every dark theme renders
          white surfaces under light text here (issue #15, 1.13:1). */
-      '.dig-selection-bar{--dsw-alias-bg-layer-1:var(--dsw-static-neutral-bluish-00,#fff);--dsw-alias-bg-layer-2:var(--dsw-static-neutral-bluish-00,#fff);display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:5px 10px;margin:6px 0;font-size:11px;line-height:16px;border-radius:var(--dsw-radius-sm,8px);background:var(--dsh-any-op-menu-cordis,var(--dsw-alias-bg-layer-2));border:1px solid var(--dsw-alias-border-l2,var(--dsw-alias-border-subtle,transparent));box-shadow:var(--dsw-elevation-prominent,0 4px 14px rgba(0,0,0,.25))}',
-      'body[data-ds-dark-theme] .dig-selection-bar{--dsw-alias-bg-layer-1:var(--dsw-static-neutral-bluish-875,#232324);--dsw-alias-bg-layer-2:var(--dsw-static-neutral-bluish-850,#2c2c2e)}',
-      '.dig-selection-bar .dig-link{margin-left:0;padding:2px 0}',
-      '.dig-selection-bar .dig-link-danger{color:var(--dsw-alias-state-error-primary)}',
       '.dig-selection-count{color:var(--dsw-alias-label-secondary);white-space:nowrap}',
       /* Focusable lists keep their own selection highlight as the focus
          indicator, so the container ring is suppressed. */
@@ -20408,10 +20408,9 @@ window.__ModuleLoader__.load({
       // .dig-cs-menu opens upward (the composer sits at the bottom of the UI). The surface
       // carries no backdrop-filter of its own: the data-cordis-panel attribute opts the popover
       // into dsh-any-background's input-surface channel (--dsw-specific-menu remapped to
-      // var(--dsh-any-op-menu-cordis) on body — see the .dig-selection-bar note:
-      // leading with the op var keeps the fill valid even when the plugin's
-      // surface sampling misses and that remap would otherwise IVCT to transparent).
-      // --dsh-any-op-menu-cordis at the input opacity tier, plus its input blur rule), so fill
+      // var(--dsh-any-op-menu-cordis) on body — leading with the op var keeps the fill
+      // valid even when the plugin's surface sampling misses and that remap would
+      // otherwise IVCT to transparent), so fill
       // opacity and frost follow the composer card exactly. Without that plugin the
       // theme-owned menu material applies. The static fallback on the rule below lives
       // on the menu surface only: re-declaring --dsw-alias-bg-layer-* here would inherit
