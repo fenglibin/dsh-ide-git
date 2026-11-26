@@ -11080,7 +11080,10 @@ window.__ModuleLoader__.load({
          三栏宽度比例由 layout.historyRatios 记忆。 */
       history: { zones: ['history'] },
     }
-    const UGIT_TAB_IDS = Object.keys(UGIT_TABS)
+    /* Tab 条只展示「变更」「历史」（用户要求，去掉「工作区」）。workspace
+       的 zones 定义保留给旧文档里 activeTab='workspace' 的迁移用（normalize
+       会把它回落到 'changes'），但它不再出现在顶部 Tab 与 tabs 顺序表里。 */
+    const UGIT_TAB_IDS = ['changes', 'history']
 
     /* Pure normalizer: unknown/duplicate ids are dropped, missing ids are filled
        from the spec defaults, and every field is coerced to a known type. A bad
@@ -14356,7 +14359,9 @@ window.__ModuleLoader__.load({
           onClick: props.onOpenMenu,
         },
           E('span', { className: 'dig-repo-name' },
-            current === null ? t('repo.pick') : current.name + (current.branch === null || current.branch === undefined ? '' : ' · ' + current.branch)),
+            /* 仓库名只显示仓库本身（用户要求）：后面已有独立的分支选择器，
+               「仓库 · 分支」是重复信息，去掉还能省出顶栏宽度。 */
+            current === null ? t('repo.pick') : current.name),
           E(Icon, { name: 'chevron', size: 12 })))
     }
 

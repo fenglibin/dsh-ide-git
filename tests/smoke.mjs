@@ -2911,3 +2911,14 @@ test('no stats flicker on refresh; manual refresh only (v0.37.7)', () => {
   assert.doesNotMatch(client, /setInterval\(\(\) => \{[\s\S]{0,400}loadSummary\(\)/, 'no 12s poll redraws the list')
   assert.match(client, /fetchRemote === true/, 'the manual refresh button still works')
 })
+
+test('topbar shows only Changes/History tabs and the repo label has no branch (v0.37.8)', () => {
+  // 1) 去掉「工作区」Tab: 顶部只渲染 UGIT_TAB_IDS = ['changes','history']。
+  assert.match(client, /const UGIT_TAB_IDS = \['changes', 'history'\]/, 'the tab strip has exactly two tabs')
+  assert.match(client, /UGIT_TAB_IDS\.map\(\(id\) =>/, 'UgitTopbar renders from UGIT_TAB_IDS')
+  // 旧的 activeTab='workspace' 文档仍被 normalize 回落到 changes（不白屏）。
+  assert.match(client, /const activeTab = UGIT_TAB_IDS\.indexOf\(source\.activeTab\) >= 0 \? source\.activeTab : 'changes'/, 'legacy workspace activeTab migrates to changes')
+  // 2) 仓库名只显示仓库本身，分支信息去掉（后面有独立分支选择器）。
+  assert.doesNotMatch(client, /current\.name \+ \(current\.branch/, 'the repo label no longer concatenates the branch')
+  assert.match(client, /current === null \? t\('repo\.pick'\) : current\.name\)/, 'the repo label is the bare repo name')
+})
