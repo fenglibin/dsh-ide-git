@@ -12,38 +12,60 @@ import { summary, diff } from './read.js'
    Config document it renders), so a setting change takes effect on the next
    click without the host caching anything. */
 const COMMIT_MAX_PROMPT_CHARS = 2000
-const COMMIT_TOTAL_BYTES = 12 * 1024
-const COMMIT_FILE_BYTES = 2048
-const COMMIT_FILE_LINES = 80
-const COMMIT_MAX_FILES = 30
+/* 输入预算放宽（v0.37.9）：原 12KB / 2KB / 80 行 / 30 文件会把一个中等改动
+   的后半文件直接丢掉，模型看不到完整变更。提交信息只是读 diff 的格式化任务，
+   64KB 对主流模型安全；超预算的文件留头部摘要而不是整文件消失。 */
+const COMMIT_TOTAL_BYTES = 64 * 1024
+const COMMIT_FILE_BYTES = 8192
+const COMMIT_FILE_LINES = 200
+const COMMIT_MAX_FILES = 60
+const COMMIT_SUMMARY_LINES = 12
 const COMMIT_BINARY = /\.(png|jpe?g|gif|webp|ico|pdf|zip|gz|tgz|bz2|xz|7z|jar|war|woff2?|ttf|otf|eot|mp[34]|mov|avi|mkv|so|dylib|dll|exe|bin|wasm|class|o|a)$/i
 
-/** One model call's text, plus how it ENDED (a failure arrives as a finish chunk). */
+/** One model call's text, plus how it ENDED (a failure arrives as a finish chunk).
+    官方 StreamChunk 允许 adapter 只发 block-end 携带完整 TextBlock，故按 index
+    兜底一次；同一 index 已有 text-delta 时不重复累加。 */
 async function collectCommitStream(stream) {
   let text = ''
   let finish = null
   let sawReasoning = false
+  const byIndex = new Map()
   for await (const chunk of stream) {
     if (chunk === null || chunk === undefined) continue
-    if (chunk.type === 'text-delta' && typeof chunk.text === 'string') text += chunk.text
-    else if (chunk.type === 'reasoning-delta') sawReasoning = true
+    if (chunk.type === 'text-delta' && typeof chunk.text === 'string') {
+      const index = Number.isInteger(chunk.index) ? chunk.index : 0
+      byIndex.set(index, (byIndex.get(index) === undefined ? '' : byIndex.get(index)) + chunk.text)
+    } else if (chunk.type === 'block-end' && chunk.block !== null && typeof chunk.block === 'object' && chunk.block.type === 'text' && typeof chunk.block.text === 'string') {
+      const index = Number.isInteger(chunk.index) ? chunk.index : 0
+      if (!byIndex.has(index)) byIndex.set(index, chunk.block.text)
+    } else if (chunk.type === 'reasoning-delta') sawReasoning = true
     else if (chunk.type === 'finish') finish = chunk.reason
   }
+  for (const index of [...byIndex.keys()].sort((a, b) => a - b)) text += byIndex.get(index)
   return { text: text, finish: finish, sawReasoning: sawReasoning }
 }
 
-/** The change set, trimmed to a budget the model can actually be asked about. */
-function commitInputOf(stagedPatch, unstagedPatch) {
+/** The change set, trimmed to a budget the model can actually be asked about.
+    第三参数把 diff() 已返回的 truncated 透传进来（此前被丢弃）。超总预算的
+    文件不再整文件消失：保留 diff header + 前若干行作摘要并记 omittedFiles。 */
+function commitInputOf(stagedPatch, unstagedPatch, upstreamTruncated) {
   const patch = (stagedPatch === '' ? '' : stagedPatch) + (unstagedPatch === '' ? '' : (stagedPatch === '' ? '' : '\n') + unstagedPatch)
   const files = []
+  const omittedFiles = []
   let bytes = 0
   let dropped = 0
   let truncated = false
+  /* 超预算文件不整文件消失：留一条极短标记，让模型至少知道这个文件被改过。
+     标记不含 diff 内容、不计入 COMMIT_TOTAL_BYTES；但 files 条目总数仍受
+     COMMIT_MAX_FILES 约束（模型上下文里的条目数也应有界）。超出上限的文件
+     名追加到 omittedFiles，并在末尾汇总成一条 omitted-list 标记，既不突破
+     上限又让模型看到全部路径（真机证据脚本发现「预算占满即整文件消失」后修正）。 */
+  const omittedMarker = (name) => 'diff --git a/' + name + ' b/' + name + '\n[diff omitted: budget exceeded]'
+  let extraOmitted = []
   const parts = patch.split(/^diff --git /m).slice(1)
   for (const part of parts) {
     const head = /^a\/(.+?) b\//.exec(part)
     const name = head === null ? '(unknown)' : head[1]
-    if (files.length >= COMMIT_MAX_FILES) { dropped += 1; continue }
     if (COMMIT_BINARY.test(name)) { dropped += 1; continue }
     if (/(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|Cargo\.lock|composer\.lock)$/.test(name)) { dropped += 1; continue }
     let body = 'diff --git ' + part
@@ -51,24 +73,66 @@ function commitInputOf(stagedPatch, unstagedPatch) {
     const lines = body.split('\n')
     if (lines.length > COMMIT_FILE_LINES) { body = lines.slice(0, COMMIT_FILE_LINES).join('\n'); trimmed = true }
     if (body.length > COMMIT_FILE_BYTES) { body = body.slice(0, COMMIT_FILE_BYTES); trimmed = true }
-    /* A file the total budget then drops was never sent, so it must not report
-       as "truncated": truncated means "the model saw a shortened version". */
-    if (bytes + body.length > COMMIT_TOTAL_BYTES) { dropped += 1; continue }
+    const overBudget = bytes + body.length > COMMIT_TOTAL_BYTES || files.length >= COMMIT_MAX_FILES
+    if (overBudget === true) {
+      dropped += 1
+      omittedFiles.push(name)
+      truncated = true
+      if (files.length < COMMIT_MAX_FILES) {
+        const summary = 'diff --git ' + part.split('\n').slice(0, COMMIT_SUMMARY_LINES).join('\n')
+        files.push({ path: name, body: summary.length <= COMMIT_SUMMARY_LINES * 80 ? summary : omittedMarker(name) })
+      } else {
+        extraOmitted.push(name)
+      }
+      continue
+    }
     if (trimmed === true) truncated = true
     bytes += body.length
     files.push({ path: name, body: body })
   }
-  return { files: files, bytes: bytes, dropped: dropped, truncated: truncated }
+  if (extraOmitted.length > 0 && files.length > 0) {
+    files[files.length - 1].body += '\n[other changed files, diff omitted: ' + extraOmitted.join(', ') + ']'
+  }
+  return { files: files, bytes: bytes, dropped: dropped, truncated: truncated, upstreamTruncated: upstreamTruncated === true, omittedFiles: omittedFiles }
 }
 
-/** Built-in instruction + the change set + the user's own addition, as DATA. */
-function commitMessagesOf(input, userPrompt) {
+/** 界面语言 → 自然语言名，白名单映射（tag 不是自然语言名，且防注入 system）。 */
+function commitLanguageOf(locale) {
+  const raw = typeof locale === 'string' ? locale.trim().toLowerCase().replace(/_/g, '-') : ''
+  const tag = raw.split('-')[0]
+  if (raw === 'zh-hk' || raw === 'zh-tw' || raw === 'zh-mo' || raw.indexOf('hant') >= 0) return '繁體中文'
+  if (tag === 'zh') return '简体中文'
+  if (tag === 'ja') return '日本語'
+  if (tag === 'ko') return '한국어'
+  if (tag === 'de') return 'Deutsch'
+  if (tag === 'fr') return 'Français'
+  if (tag === 'ru') return 'Русский'
+  if (tag === 'pt') return 'Português'
+  if (tag === 'it') return 'Italiano'
+  if (tag === 'nl') return 'Nederlands'
+  if (tag === 'pl') return 'Polski'
+  if (tag === 'sv') return 'Svenska'
+  if (tag === 'tr') return 'Türkçe'
+  if (tag === 'id') return 'Bahasa Indonesia'
+  if (tag === 'vi') return 'Tiếng Việt'
+  if (tag === 'ar') return 'العربية'
+  if (tag === 'hi') return 'हिन्दी'
+  if (tag === 'th') return 'ไทย'
+  return 'English'
+}
+
+/** Built-in instruction + the change set + the user's own addition, as DATA.
+    语言要求放 system 而不是 user：避免被「diff 里全是英文标识符」带偏。
+    自定义 prompt 仍是 user 消息末尾的 style-only 附加，优先级不变。 */
+function commitMessagesOf(input, userPrompt, locale) {
+  const language = commitLanguageOf(locale)
   const system = [
     'You write git commit messages.',
     'Reply with the commit message ONLY: no prose, no code fences, no quotes, no explanation.',
     'First line: a concise subject, at most 72 characters, no trailing period.',
     'Then one blank line and a short body explaining what changed and why, when it adds value.',
     'Describe only what the diff shows. Never invent files, features or issue numbers.',
+    'Write the commit message in ' + language + '. Use that language for both the subject and the body.',
   ].join('\n')
   const user = [
     'Write the commit message for these changes.',
@@ -83,12 +147,14 @@ function commitMessagesOf(input, userPrompt) {
   return { system: system, user: user + addition }
 }
 
-/** Strip what a model habitually wraps a message in; keep the text itself. */
-function cleanupCommitMessage(text) {
+/** Strip what a model habitually wraps a message in; keep the text itself.
+    partial（输出被长度上限截断）且句尾不完整时补省略号，明确这是半截。 */
+function cleanupCommitMessage(text, partial) {
   let out = String(text === null || text === undefined ? '' : text).trim()
   const fence = /^```[a-zA-Z]*\n([\s\S]*?)\n?```$/.exec(out)
   if (fence !== null) out = fence[1].trim()
   if (out.length > 1 && ((out.startsWith('"') && out.endsWith('"')) || (out.startsWith('“') && out.endsWith('”')))) out = out.slice(1, -1).trim()
+  if (partial === true && out !== '' && !/[.!?。！？…\n]$/.test(out)) out += '…'
   return out
 }
 
@@ -291,8 +357,11 @@ async function commitMessage(payload) {
     const scope = { cwd: cwd, repoRoot: repoRoot }
     const route = await commitRouteOf(payload)
     const sums = await summary(scope)
-    const stagedPatch = sums.changes.staged.length > 0 ? (await diff(Object.assign({}, scope, { staged: true }))).patch : ''
-    const input = commitInputOf(stagedPatch, (await diff(scope)).patch)
+    const stagedResult = sums.changes.staged.length > 0 ? await diff(Object.assign({}, scope, { staged: true })) : { patch: '', truncated: false }
+    const unstagedResult = await diff(scope)
+    /* diff() 早已返回 truncated（read.js:330-331），此前只取 .patch 丢弃了它。
+       合并两路透传给 commitInputOf，客户端才能如实说「上游 diff 被截断」。 */
+    const input = commitInputOf(stagedResult.patch, unstagedResult.patch, stagedResult.truncated === true || unstagedResult.truncated === true)
     if (input.files.length === 0) {
       if (input.dropped > 0) {
         throw new PanelError('only-ignored-changes', 'the only changes are lock files or binary files, which are not sent to the model; stage a source change first')
@@ -302,7 +371,7 @@ async function commitMessage(payload) {
     const asked = typeof payload.prompt === 'string' ? payload.prompt : ''
     const prompt = asked.slice(0, COMMIT_MAX_PROMPT_CHARS)
     const reasoning = typeof payload.reasoningEffort === 'string' ? payload.reasoningEffort.trim() : ''
-    const spoken = commitMessagesOf(input, prompt)
+    const spoken = commitMessagesOf(input, prompt, payload.locale)
     const options = {
       provider: route.provider,
       model: route.model,
@@ -336,7 +405,10 @@ async function commitMessage(payload) {
     }
     if (finish.kind === 'error') throw routeError(route, 'llm-error', failureTextOf(finish.failure))
     if (finish.kind === 'aborted') throw routeError(route, 'llm-aborted', 'the call was aborted: ' + failureTextOf(finish.failure))
-    if (finish.kind !== 'stop') {
+    /* max-tokens 且已有文本 = 输出被长度上限截成半截：不当成功、也不当硬
+       错误，返回 partial 让客户端明确标注「半截结果」（用户可重写）。 */
+    const partial = finish.kind === 'max-tokens' && collected.text.trim() !== ''
+    if (finish.kind !== 'stop' && partial === false) {
       /* The max-tokens + no-text + reasoning-delta shape is the exact signature
          of issue #7: the budget (reasoning included) ran out mid-thought. Say
          what happened and what to do, instead of a bare finish kind. */
@@ -345,7 +417,7 @@ async function commitMessage(payload) {
       }
       throw routeError(route, 'llm-unfinished', 'the model stopped with "' + String(finish.kind) + '"; the message may be incomplete')
     }
-    const message = cleanupCommitMessage(collected.text)
+    const message = cleanupCommitMessage(collected.text, partial)
     if (message === '') throw routeError(route, 'empty-output', 'the model returned no text')
     return {
       message: message,
@@ -354,7 +426,12 @@ async function commitMessage(payload) {
       routeSource: route.source,
       reasoningEffort: effectiveReasoning === '' ? null : effectiveReasoning,
       elapsedMs: Date.now() - started,
-      input: { files: input.files.length, bytes: input.bytes, dropped: input.dropped, truncated: input.truncated },
+      partial: partial,
+      finishKind: finish === null || finish === undefined ? null : String(finish.kind),
+      input: {
+        files: input.files.length, bytes: input.bytes, dropped: input.dropped, truncated: input.truncated,
+        upstreamTruncated: input.upstreamTruncated, omittedFiles: input.omittedFiles,
+      },
       promptTruncated: asked.length > COMMIT_MAX_PROMPT_CHARS,
     }
   } finally {

@@ -194,12 +194,58 @@ async function discard(payload) {
   return { discarded: paths.length, untracked: untracked, undo: undo }
 }
 
+/* 待提交区可能混入被 .gitignore 忽略的路径（用户截图：一条裸目录让
+   `git add -A -- <paths>` 整条失败）。实测该失败是「部分成功」：正常路径
+   其实已经全部暂存进 index，报错只是那一条没进 index。因此失败时不再
+   逐条重试、也不解析 stderr 文案（中英文 locale 不同），而是求「可提交
+   集合」= `git ls-files -z`（全量已跟踪，含本次无变更的文件）∪
+   `git diff --cached -z --name-only`（本次新暂存的新增/修改文件）。
+   只看 diff --cached 会把「已跟踪但本次无变更」的几十个文件误报成被忽略
+   （真实截图量级复现：45 个路径里 38 个被误报），只有 ls-files 能精确
+   区分「裸目录 / 被忽略的新文件」与「目录下的已跟踪文件」。
+   求 `paths ∩ 可提交集合` 而不是拿全集，避免顺带提交 index 里别的条目。 */
+async function stagedPathsOf(root) {
+  const tracked = await runGit(root, ['ls-files', '-z'])
+  if (tracked.code !== 0) {
+    const detail = tracked.stderr.trim() === '' ? tracked.stdout.trim() : tracked.stderr.trim()
+    throw new PanelError('git-failed', 'git ls-files failed: ' + (detail === '' ? 'exit ' + tracked.code : detail), 409)
+  }
+  const staged = await runGit(root, ['diff', '--cached', '-z', '--name-only'])
+  if (staged.code !== 0) {
+    const detail = staged.stderr.trim() === '' ? staged.stdout.trim() : staged.stderr.trim()
+    throw new PanelError('git-failed', 'git diff --cached failed: ' + (detail === '' ? 'exit ' + staged.code : detail), 409)
+  }
+  const set = new Set()
+  for (const entry of tracked.stdout.split('\0')) {
+    if (entry !== '') set.add(entry)
+  }
+  for (const entry of staged.stdout.split('\0')) {
+    if (entry !== '') set.add(entry)
+  }
+  return set
+}
+
 async function commit(payload) {
   const cwd = cwdOf(payload)
   const root = await repoRootOf(cwd, payload)
   const message = requireMessage(payload.message)
   const paths = (payload.paths === undefined || payload.paths === null) ? [] : optionalPaths(payload, 'paths')
-  if (paths.length > 0) await git(root, ['add', '-A', '--', ...paths])
+  let submitPaths = paths
+  let ignoredPaths = []
+  if (paths.length > 0) {
+    const added = await runGit(root, ['add', '-A', '--', ...paths])
+    if (added.code !== 0) {
+      const staged = await stagedPathsOf(root)
+      submitPaths = paths.filter((entry) => staged.has(entry))
+      ignoredPaths = paths.filter((entry) => !staged.has(entry))
+    }
+  }
+  /* 全部路径都被忽略时没有东西可提交：不 commit、不 push，如实返回
+     skipped，让客户端保留待提交区标记并提示（git index 里已有的其它
+     已暂存条目不受影响，与改动前一致）。 */
+  if (paths.length > 0 && submitPaths.length === 0) {
+    return { output: '', skipped: true, ignoredPaths: ignoredPaths, pushed: false }
+  }
   const args = ['commit', '-m', message]
   if (payload.amend === true) args.push('--amend')
   if (payload.signoff === true) args.push('--signoff')
@@ -207,9 +253,13 @@ async function commit(payload) {
      保证新增文件可提交，再带 pathspec 提交 —— 只提交这批路径的当前内容，
      index 里其它已暂存的条目原样保留，不会被顺带提交。不带 pathspec 的
      paths（如「提交所有」对话框）维持原语义：预暂存后提交整个 index。 */
-  if (payload.pathspec === true && paths.length > 0) args.push('--', ...paths)
+  if (payload.pathspec === true && submitPaths.length > 0) args.push('--', ...submitPaths)
   const out = await git(root, args)
   const result = { output: out.trim() }
+  if (ignoredPaths.length > 0) {
+    result.skipped = false
+    result.ignoredPaths = ignoredPaths
+  }
   if (payload.push === true) {
     // Commit-and-push is one gesture in the panel, so the commit is published in
     // the same request. A failed push must not hide the commit that did land.

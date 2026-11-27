@@ -171,6 +171,12 @@ window.__ModuleLoader__.load({
       'menu.pendAdd': '添加至“待提交”',
       'menu.pendAddN': '添加 {n} 个文件至“待提交”',
       'menu.pendRemove': '移出“待提交”',
+      'toast.commitIgnoredSkipped': '已跳过 {n} 个被 .gitignore 忽略的路径,仍保留在待提交区',
+      'menu.pendRemoveN': '移出 {n} 个文件',
+      'menu.pendRemoveAll': '全部移出待提交区',
+      'changes.aiPartial': '模型输出被长度上限截断,本次结果是半截,可重写。',
+      'changes.aiNoticeOmitted': '有 {n} 个文件的 diff 未完整发给模型,信息可能不完整。',
+      'changes.aiNoticeUpstream': '变更差异过大,部分内容未发给模型,信息可能不完整。',
       'menu.discardN': '还原 {n} 项…',
       'menu.cherryN': 'Cherry-pick {n} 个提交',
       'menu.deleteLocalN': '删除 {n} 个本地分支…',
@@ -632,6 +638,12 @@ window.__ModuleLoader__.load({
       'menu.pendAdd': '添加至“待提交”',
       'menu.pendAddN': '添加 {n} 个文件至“待提交”',
       'menu.pendRemove': '移出“待提交”',
+      'toast.commitIgnoredSkipped': 'Skipped {n} paths ignored by .gitignore; they stay in the pending list',
+      'menu.pendRemoveN': 'Remove {n} files',
+      'menu.pendRemoveAll': 'Remove all from pending',
+      'changes.aiPartial': 'The model output hit its length limit; this is a partial result, you can rewrite it.',
+      'changes.aiNoticeOmitted': '{n} files had their diff trimmed before being sent; the message may be incomplete.',
+      'changes.aiNoticeUpstream': 'The diff was too large; part of it was not sent to the model.',
       'menu.discardN': 'Discard {n} items…',
       'menu.cherryN': 'Cherry-pick {n} commits',
       'menu.deleteLocalN': 'Delete {n} local branches…',
@@ -1101,6 +1113,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': '添加至「待提交」',
         'menu.pendAddN': '添加 {n} 個檔案至「待提交」',
         'menu.pendRemove': '移出「待提交」',
+        'toast.commitIgnoredSkipped': '已跳過 {n} 個被 .gitignore 忽略嘅路徑,仍保留喺待提交區',
+        'menu.pendRemoveN': '移出 {n} 個檔案',
+        'menu.pendRemoveAll': '全部移出待提交區',
+        'changes.aiPartial': '模型輸出被長度上限截斷,今次係半截結果,可重寫。',
+        'changes.aiNoticeOmitted': '有 {n} 個檔案嘅 diff 未完整送俾模型,資訊可能唔完整。',
+        'changes.aiNoticeUpstream': '變更差異過大,部分內容未送俾模型,資訊可能唔完整。',
         'menu.discardN': '還原 {n} 項…',
         'menu.cherryN': 'Cherry-pick {n} 個提交',
         'menu.deleteLocalN': '刪除 {n} 個本地分支…',
@@ -1562,6 +1580,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': '加入「待提交」',
         'menu.pendAddN': '加入 {n} 個檔案至「待提交」',
         'menu.pendRemove': '從「待提交」移除',
+        'toast.commitIgnoredSkipped': '已跳過 {n} 個被 .gitignore 忽略的路徑,仍保留在待提交區',
+        'menu.pendRemoveN': '移出 {n} 個檔案',
+        'menu.pendRemoveAll': '全部移出待提交區',
+        'changes.aiPartial': '模型輸出被長度上限截斷,本次結果是半截,可重寫。',
+        'changes.aiNoticeOmitted': '有 {n} 個檔案的 diff 未完整傳給模型,訊息可能不完整。',
+        'changes.aiNoticeUpstream': '變更差異過大,部分內容未傳給模型,訊息可能不完整。',
         'menu.discardN': '還原 {n} 項…',
         'menu.cherryN': 'Cherry-pick {n} 個提交',
         'menu.deleteLocalN': '刪除 {n} 個本地分支…',
@@ -2023,6 +2047,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': '加入「待提交」',
         'menu.pendAddN': '加入 {n} 個檔案至「待提交」',
         'menu.pendRemove': '從「待提交」移除',
+        'toast.commitIgnoredSkipped': '已跳過 {n} 個被 .gitignore 忽略的路徑,仍保留在待提交區',
+        'menu.pendRemoveN': '移出 {n} 個檔案',
+        'menu.pendRemoveAll': '全部移出待提交區',
+        'changes.aiPartial': '模型輸出被長度上限截斷,本次結果是半截,可重寫。',
+        'changes.aiNoticeOmitted': '有 {n} 個檔案的 diff 未完整傳給模型,訊息可能不完整。',
+        'changes.aiNoticeUpstream': '變更差異過大,部分內容未傳給模型,訊息可能不完整。',
         'menu.discardN': '還原 {n} 項…',
         'menu.cherryN': 'Cherry-pick {n} 個提交',
         'menu.deleteLocalN': '刪除 {n} 個本地分支…',
@@ -2484,6 +2514,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': '「コミット予定」に追加',
         'menu.pendAddN': '{n} 件を「コミット予定」に追加',
         'menu.pendRemove': '「コミット予定」から除外',
+        'toast.commitIgnoredSkipped': ' .gitignore で無視された {n} 件をスキップし、コミット予定に残しました',
+        'menu.pendRemoveN': '{n} 件を「コミット予定」から除外',
+        'menu.pendRemoveAll': '「コミット予定」からすべて除外',
+        'changes.aiPartial': 'モデルの出力が長さ上限で切り詰められました。結果は途中までです。書き直せます。',
+        'changes.aiNoticeOmitted': '{n} 件の diff が途中までしか送られていません。内容が不完全な可能性があります。',
+        'changes.aiNoticeUpstream': '差分が大きすぎるため、一部がモデルに送られていません。',
         'menu.discardN': '{n} 件を破棄…',
         'menu.cherryN': 'コミット {n} 件をチェリーピック',
         'menu.deleteLocalN': 'ローカルブランチ {n} 件を削除…',
@@ -2945,6 +2981,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': '「커밋 예정」에 추가',
         'menu.pendAddN': '{n}개 파일을「커밋 예정」에 추가',
         'menu.pendRemove': '「커밋 예정」에서 제거',
+        'toast.commitIgnoredSkipped': ' .gitignore로 무시된 {n}개 경로를 건너뛰고 커밋 예정에 남겼습니다',
+        'menu.pendRemoveN': '{n}개 파일 제거',
+        'menu.pendRemoveAll': '커밋 예정에서 모두 제거',
+        'changes.aiPartial': '모델 출력이 길이 제한에 걸렸습니다. 결과가 중간까지입니다. 다시 작성할 수 있습니다.',
+        'changes.aiNoticeOmitted': '{n}개 파일의 diff가 일부만 전달되었습니다. 메시지가 불완전할 수 있습니다.',
+        'changes.aiNoticeUpstream': '변경량이 너무 커 일부가 모델에 전달되지 않았습니다.',
         'menu.discardN': '{n}개 되돌리기…',
         'menu.cherryN': '커밋 {n}개 체리픽',
         'menu.deleteLocalN': '로컬 브랜치 {n}개 삭제…',
@@ -3406,6 +3448,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Zu "Ausstehend" hinzufügen',
         'menu.pendAddN': '{n} Datei(en) zu "Ausstehend" hinzufügen',
         'menu.pendRemove': 'Aus "Ausstehend" entfernen',
+        'toast.commitIgnoredSkipped': '{n} von .gitignore ignorierte Pfade übersprungen; sie bleiben in „Ausstehend"',
+        'menu.pendRemoveN': '{n} Dateien entfernen',
+        'menu.pendRemoveAll': 'Alle aus „Ausstehend" entfernen',
+        'changes.aiPartial': 'Die Modellausgabe wurde durch das Längenlimit abgeschnitten; dies ist ein unvollständiges Ergebnis.',
+        'changes.aiNoticeOmitted': '{n} Dateien wurden nur gekürzt an das Modell gesendet; die Nachricht kann unvollständig sein.',
+        'changes.aiNoticeUpstream': 'Der Diff war zu groß; ein Teil wurde nicht an das Modell gesendet.',
         'menu.discardN': '{n} Elemente verwerfen…',
         'menu.cherryN': '{n} Commits cherry-picken',
         'menu.deleteLocalN': '{n} lokale Branches löschen…',
@@ -3867,6 +3915,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Ajouter à « À committer »',
         'menu.pendAddN': 'Ajouter {n} fichier(s) à « À committer »',
         'menu.pendRemove': 'Retirer de « À committer »',
+        'toast.commitIgnoredSkipped': '{n} chemins ignorés par .gitignore ont été ignorés ; ils restent dans « À committer »',
+        'menu.pendRemoveN': 'Retirer {n} fichiers',
+        'menu.pendRemoveAll': 'Tout retirer de « À committer »',
+        'changes.aiPartial': 'La sortie du modèle a atteint sa limite de longueur ; résultat partiel, vous pouvez réécrire.',
+        'changes.aiNoticeOmitted': '{n} fichiers ont été envoyés au modèle de façon tronquée ; le message peut être incomplet.',
+        'changes.aiNoticeUpstream': 'Le diff était trop volumineux ; une partie n’a pas été envoyée au modèle.',
         'menu.discardN': 'Abandonner {n} éléments…',
         'menu.cherryN': 'Cherry-pick de {n} commits',
         'menu.deleteLocalN': 'Supprimer {n} branches locales…',
@@ -4328,6 +4382,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Добавить в «Ожидающие»',
         'menu.pendAddN': 'Добавить {n} файл(ов) в «Ожидающие»',
         'menu.pendRemove': 'Убрать из «Ожидающие»',
+        'toast.commitIgnoredSkipped': 'Пропущено {n} путей, игнорируемых .gitignore; они остаются в «Ожидающих»',
+        'menu.pendRemoveN': 'Убрать {n} файлов',
+        'menu.pendRemoveAll': 'Убрать всё из «Ожидающих»',
+        'changes.aiPartial': 'Вывод модели обрезан по лимиту длины; результат неполный, можно переписать.',
+        'changes.aiNoticeOmitted': 'Diff {n} файлов передан не полностью; сообщение может быть неполным.',
+        'changes.aiNoticeUpstream': 'Diff слишком большой; часть не отправлена модели.',
         'menu.discardN': 'Отменить изменения: {n}…',
         'menu.cherryN': 'Cherry-pick {n} коммит(ов)',
         'menu.deleteLocalN': 'Удалить локальных ветвей: {n}…',
@@ -4789,6 +4849,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Adicionar a "Pendentes"',
         'menu.pendAddN': 'Adicionar {n} arquivo(s) a "Pendentes"',
         'menu.pendRemove': 'Remover de "Pendentes"',
+        'toast.commitIgnoredSkipped': '{n} caminhos ignorados pelo .gitignore foram pulados; permanecem em « Pendentes »',
+        'menu.pendRemoveN': 'Remover {n} arquivos',
+        'menu.pendRemoveAll': 'Remover tudo de « Pendentes »',
+        'changes.aiPartial': 'A saída do modelo atingiu o limite de tamanho; resultado parcial, pode reescrever.',
+        'changes.aiNoticeOmitted': '{n} arquivos tiveram o diff enviado de forma truncada; a mensagem pode ficar incompleta.',
+        'changes.aiNoticeUpstream': 'O diff era grande demais; parte não foi enviada ao modelo.',
         'menu.discardN': 'Descartar {n} itens…',
         'menu.cherryN': 'Cherry-pick de {n} commits',
         'menu.deleteLocalN': 'Excluir {n} ramificações locais…',
@@ -5250,6 +5316,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Aggiungi a "In attesa"',
         'menu.pendAddN': 'Aggiungi {n} file a "In attesa"',
         'menu.pendRemove': 'Rimuovi da "In attesa"',
+        'toast.commitIgnoredSkipped': '{n} percorsi ignorati da .gitignore sono stati saltati; restano in « In attesa »',
+        'menu.pendRemoveN': 'Rimuovi {n} file',
+        'menu.pendRemoveAll': 'Rimuovi tutto da « In attesa »',
+        'changes.aiPartial': 'L’output del modello ha raggiunto il limite di lunghezza; risultato parziale, puoi riscriverlo.',
+        'changes.aiNoticeOmitted': '{n} file hanno il diff inviato in modo troncato; il messaggio può essere incompleto.',
+        'changes.aiNoticeUpstream': 'Il diff era troppo grande; parte non è stata inviata al modello.',
         'menu.discardN': 'Scarta {n} elementi…',
         'menu.cherryN': 'Cherry-pick di {n} commit',
         'menu.deleteLocalN': 'Elimina {n} branch locali…',
@@ -5711,6 +5783,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Toevoegen aan "In wachtrij"',
         'menu.pendAddN': '{n} bestand(en) toevoegen aan "In wachtrij"',
         'menu.pendRemove': 'Uit "In wachtrij" verwijderen',
+        'toast.commitIgnoredSkipped': '{n} door .gitignore genegeerde paden overgeslagen; ze blijven in „In wachtrij"',
+        'menu.pendRemoveN': '{n} bestanden verwijderen',
+        'menu.pendRemoveAll': 'Alles uit „In wachtrij" verwijderen',
+        'changes.aiPartial': 'De modeluitvoer raakte de lengtelimiet; dit is een gedeeltelijk resultaat, u kunt herschrijven.',
+        'changes.aiNoticeOmitted': '{n} bestanden zijn afgekapt naar het model gestuurd; het bericht kan onvolledig zijn.',
+        'changes.aiNoticeUpstream': 'De diff was te groot; een deel is niet naar het model gestuurd.',
         'menu.discardN': '{n} items weggooien…',
         'menu.cherryN': '{n} commits cherry-picken',
         'menu.deleteLocalN': '{n} lokale branches verwijderen…',
@@ -6172,6 +6250,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Dodaj do «Oczekujące»',
         'menu.pendAddN': 'Dodaj {n} plik(ów) do «Oczekujące»',
         'menu.pendRemove': 'Usuń z «Oczekujące»',
+        'toast.commitIgnoredSkipped': 'Pominięto {n} ścieżek ignorowanych przez .gitignore; pozostają w «Oczekujące»',
+        'menu.pendRemoveN': 'Usuń {n} plików',
+        'menu.pendRemoveAll': 'Usuń wszystko z «Oczekujące»',
+        'changes.aiPartial': 'Wynik modelu został ucięty przez limit długości; to wynik częściowy, można go przepisać.',
+        'changes.aiNoticeOmitted': 'Diff {n} plików wysłano tylko częściowo; wiadomość może być niepełna.',
+        'changes.aiNoticeUpstream': 'Diff był zbyt duży; część nie została wysłana do modelu.',
         'menu.discardN': 'Odrzuć {n}…',
         'menu.cherryN': 'Cherry-pick {n} commit(ów)',
         'menu.deleteLocalN': 'Usuń {n} gałęzi lokalnych…',
@@ -6633,6 +6717,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Lägg till i "Västrand"',
         'menu.pendAddN': 'Lägg till {n} fil(er) i "Västrand"',
         'menu.pendRemove': 'Ta bort från "Västrand"',
+        'toast.commitIgnoredSkipped': '{n} sökvägar ignorerade av .gitignore hoppades över; de står kvar i »Västrand«',
+        'menu.pendRemoveN': 'Ta bort {n} filer',
+        'menu.pendRemoveAll': 'Ta bort allt från »Västrand«',
+        'changes.aiPartial': 'Modellens utdata nådde längdgränsen; resultatet är ofullständigt, du kan skriva om det.',
+        'changes.aiNoticeOmitted': '{n} filer skickades med avkortad diff; meddelandet kan vara ofullständigt.',
+        'changes.aiNoticeUpstream': 'Diffen var för stor; en del skickades inte till modellen.',
         'menu.discardN': 'Förkasta {n} objekt…',
         'menu.cherryN': 'Cherry-picka {n} commit(s)',
         'menu.deleteLocalN': 'Ta bort {n} lokala grenar…',
@@ -7094,6 +7184,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': '"Bekleyen"e ekle',
         'menu.pendAddN': '{n} dosyayı "Bekleyen"e ekle',
         'menu.pendRemove': '"Bekleyen"den çıkar',
+        'toast.commitIgnoredSkipped': '.gitignore tarafından yok sayılan {n} yol atlandı; «Bekleyen» içinde kaldı',
+        'menu.pendRemoveN': '{n} dosyayı çıkar',
+        'menu.pendRemoveAll': '«Bekleyen» içindeki her şeyi çıkar',
+        'changes.aiPartial': 'Model çıktısı uzunluk sınırına takıldı; sonuç yarım, yeniden yazabilirsiniz.',
+        'changes.aiNoticeOmitted': '{n} dosyanın diff’i kırpılarak gönderildi; mesaj eksik olabilir.',
+        'changes.aiNoticeUpstream': 'Diff çok büyüktü; bir kısmı modele gönderilmedi.',
         'menu.discardN': '{n} öğeyi at…',
         'menu.cherryN': '{n} commit seçip al',
         'menu.deleteLocalN': '{n} yerel dalı sil…',
@@ -7555,6 +7651,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Tambahkan ke "Menunggu"',
         'menu.pendAddN': 'Tambahkan {n} berkas ke "Menunggu"',
         'menu.pendRemove': 'Hapus dari "Menunggu"',
+        'toast.commitIgnoredSkipped': '{n} jalur yang diabaikan .gitignore dilewati; tetap ada di «Menunggu»',
+        'menu.pendRemoveN': 'Keluarkan {n} berkas',
+        'menu.pendRemoveAll': 'Keluarkan semua dari «Menunggu»',
+        'changes.aiPartial': 'Keluaran model terpotong batas panjang; hasilnya setengah, bisa ditulis ulang.',
+        'changes.aiNoticeOmitted': 'Diff {n} berkas hanya dikirim sebagian; pesan bisa tidak lengkap.',
+        'changes.aiNoticeUpstream': 'Diff terlalu besar; sebagian tidak dikirim ke model.',
         'menu.discardN': 'Buang {n} item…',
         'menu.cherryN': 'Cherry-pick {n} commit',
         'menu.deleteLocalN': 'Hapus {n} cabang lokal…',
@@ -8016,6 +8118,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'Thêm vào "Chờ commit"',
         'menu.pendAddN': 'Thêm {n} tệp vào "Chờ commit"',
         'menu.pendRemove': 'Xóa khỏi "Chờ commit"',
+        'toast.commitIgnoredSkipped': 'Đã bỏ qua {n} đường dẫn bị .gitignore bỏ qua; vẫn giữ trong «Chờ commit»',
+        'menu.pendRemoveN': 'Xóa {n} tệp',
+        'menu.pendRemoveAll': 'Xóa tất cả khỏi «Chờ commit»',
+        'changes.aiPartial': 'Kết quả của mô hình bị cắt do giới hạn độ dài; đây là kết quả dang dở, có thể viết lại.',
+        'changes.aiNoticeOmitted': '{n} tệp có diff bị rút gọn trước khi gửi; thông điệp có thể chưa đầy đủ.',
+        'changes.aiNoticeUpstream': 'Diff quá lớn; một phần không được gửi tới mô hình.',
         'menu.discardN': 'Bỏ {n} mục…',
         'menu.cherryN': 'Cherry-pick {n} commit',
         'menu.deleteLocalN': 'Xoá {n} nhánh cục bộ…',
@@ -8477,6 +8585,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'إضافة إلى «قيد الانتظار»',
         'menu.pendAddN': 'إضافة {n} ملف(ات) إلى «قيد الانتظار»',
         'menu.pendRemove': 'إزالة من «قيد الانتظار»',
+        'toast.commitIgnoredSkipped': 'تم تخطي {n} مسارًا تجاهلها .gitignore؛ تبقى في «قيد الانتظار»',
+        'menu.pendRemoveN': 'إزالة {n} ملف(ات)',
+        'menu.pendRemoveAll': 'إزالة الكل من «قيد الانتظار»',
+        'changes.aiPartial': 'وصل إخراج النموذج إلى حد الطول؛ النتيجة ناقصة، يمكنك إعادة الكتابة.',
+        'changes.aiNoticeOmitted': 'تم إرسال diff لـ {n} ملف(ات) مقتطعًا؛ قد تكون الرسالة ناقصة.',
+        'changes.aiNoticeUpstream': 'كان الفرق كبيرًا جدًا؛ لم يُرسل جزء منه إلى النموذج.',
         'menu.discardN': 'تجاهل {n} عنصرًا…',
         'menu.cherryN': 'Cherry-pick لـ {n} إيداع',
         'menu.deleteLocalN': 'احذف {n} فرعًا محليًا…',
@@ -8938,6 +9052,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': '"लंबित" में जोड़ें',
         'menu.pendAddN': '{n} फ़ाइल(ें) "लंबित" में जोड़ें',
         'menu.pendRemove': '"लंबित" से हटाएं',
+        'toast.commitIgnoredSkipped': ' .gitignore द्वारा अनदेखे {n} पथ छोड़े गए; वे «लंबित» में रहेंगे',
+        'menu.pendRemoveN': '{n} फ़ाइलें हटाएं',
+        'menu.pendRemoveAll': '«लंबित» से सब हटाएं',
+        'changes.aiPartial': 'मॉडल का आउटपुट लंबाई सीमा से कट गया; यह आधा परिणाम है, दोबारा लिख सकते हैं।',
+        'changes.aiNoticeOmitted': '{n} फ़ाइलों का diff अधूरा भेजा गया; संदेश अधूरा हो सकता है।',
+        'changes.aiNoticeUpstream': 'Diff बहुत बड़ा था; कुछ हिस्सा मॉडल को नहीं भेजा गया।',
         'menu.discardN': '{n} आइटम छोड़ें…',
         'menu.cherryN': '{n} कमिट चेरी-पिक करें',
         'menu.deleteLocalN': '{n} लोकल ब्रांच हटाएँ…',
@@ -9399,6 +9519,12 @@ window.__ModuleLoader__.load({
         'menu.pendAdd': 'เพิ่มไปยัง "รอคอมมิต"',
         'menu.pendAddN': 'เพิ่ม {n} ไฟล์ไปยัง "รอคอมมิต"',
         'menu.pendRemove': 'นำออกจาก "รอคอมมิต"',
+        'toast.commitIgnoredSkipped': 'ข้าม {n} เส้นทางที่ .gitignore เพิกเฉยแล้วยังคงอยู่ใน «รอคอมมิต»',
+        'menu.pendRemoveN': 'นำออก {n} ไฟล์',
+        'menu.pendRemoveAll': 'นำออกทั้งหมดจาก «รอคอมมิต»',
+        'changes.aiPartial': 'ผลลัพธ์ของโมเดลถูกตัดตามขีดจำกัดความยาว เป็นผลลัพธ์ครึ่งเดียว เขียนใหม่ได้',
+        'changes.aiNoticeOmitted': 'มี {n} ไฟล์ที่ส่ง diff ไม่ครบ ข้อความอาจไม่สมบูรณ์',
+        'changes.aiNoticeUpstream': 'Diff ใหญ่เกินไป บางส่วนไม่ได้ส่งให้โมเดล',
         'menu.discardN': 'ทิ้ง {n} รายการ…',
         'menu.cherryN': 'Cherry-pick {n} คอมมิต',
         'menu.deleteLocalN': 'ลบแบรนช์ในเครื่อง {n} รายการ…',
@@ -14901,9 +15027,10 @@ window.__ModuleLoader__.load({
         const keys = []
         if (items === null) return keys
         for (const entry of items) {
-          /* 待提交分组行用 'pending:' 前缀，不属于 git 状态组，不能参与
-             Shift 范围的 group:path 索引（否则 indexOf 错位把多选打回单选）。 */
-          if (entry.kind === 'row' && entry.key.indexOf('ignored:') !== 0 && entry.key.indexOf('pending:') !== 0) keys.push(entry.key)
+          /* v0.37.9: 待提交行也参与 Shift 范围，与普通变更行共用一个选择集
+             （'pending:' 前缀与 group:path 格式一致）。只排除被忽略文件：
+             它们没有 diff，也不该进待提交多选。 */
+          if (entry.kind === 'row' && entry.key.indexOf('ignored:') !== 0) keys.push(entry.key)
         }
         return keys
       }
@@ -14980,14 +15107,25 @@ window.__ModuleLoader__.load({
               model: settings.model,
               reasoningEffort: settings.reasoning,
               prompt: settings.prompt,
+              /* 界面语言跟随（v0.37.9）：activeLocaleOf 实时读 DSH 语言偏好，
+                 宿主据此在 system 指令里要求对应语言，中文界面写中文。 */
+              locale: activeLocaleOf(props.ctx),
             },
           ))
           setAiUndo(message === '' ? null : message)
           setMessage(typeof data.message === 'string' ? data.message : '')
-          /* Say what the model did NOT see, instead of quietly sending less. */
+          /* 三态提示（v0.37.9）：半截输出 > 省略文件 > 上游 diff 截断 > 笼统
+             的「部分变更未发送」。每种都如实说模型没看到什么，而不是混成一句。 */
           const input = data.input === undefined ? {} : data.input
-          const incomplete = input.truncated === true || (typeof input.dropped === 'number' && input.dropped > 0) || data.promptTruncated === true
-          setAiNote(incomplete === true ? t('changes.aiNotice') : null)
+          let aiText = null
+          if (data.partial === true) aiText = t('changes.aiPartial')
+          else if (Array.isArray(input.omittedFiles) && input.omittedFiles.length > 0) aiText = fill(t('changes.aiNoticeOmitted'), { n: input.omittedFiles.length })
+          else if (input.upstreamTruncated === true) aiText = t('changes.aiNoticeUpstream')
+          else {
+            const incomplete = input.truncated === true || (typeof input.dropped === 'number' && input.dropped > 0) || data.promptTruncated === true
+            aiText = incomplete === true ? t('changes.aiNotice') : null
+          }
+          setAiNote(aiText)
         } catch (error) {
           const code = error !== null && error !== undefined && typeof error.code === 'string' ? error.code : 'unknown'
           setAiNote(t('changes.aiFailed') + ' [' + code + '] ' + String(error && error.message ? error.message : error))
@@ -15172,12 +15310,27 @@ window.__ModuleLoader__.load({
             out.push({
               kind: 'group', key: 'pending-head', h: ITEM_HEIGHTS.group,
               node: E('div', { className: 'dig-group-head dig-group-head-pending' },
-                E('span', null, fill(t('changes.pending'), { n: pending.size }))),
+                E('span', null, fill(t('changes.pending'), { n: pending.size })),
+                /* v0.37.9: 栏右「全部移出」，.dig-link 自带 margin-left:auto
+                   顶到最右，与「已暂存/更改」分组头右侧按钮同一范式。 */
+                E('button', {
+                  type: 'button', className: 'dig-link', title: t('menu.pendRemoveAll'),
+                  onClick: () => { if (typeof props.onPendingRemoveAll === 'function') props.onPendingRemoveAll() },
+                }, t('menu.pendRemoveAll'))),
             })
             for (const path of pending) {
               out.push({
                 kind: 'row', key: 'pending:' + path, h: ITEM_HEIGHTS.row,
-                node: E('div', { className: 'dig-row dig-row-file dig-row-pending', title: path, onClick: (event) => { if (typeof props.onDiff === 'function') props.onDiff({ path: path }, 'pending') } },
+                /* v0.37.9: 待提交行接入同一套 changeSelection —— 单击走
+                   handleRowClick（把 group 传 'pending'，拼出 pending:path 键），
+                   与 Shift/Ctrl/框选/高亮共用一条选择源。双击仍开 diff。 */
+                node: E('div', {
+                  className: 'dig-row dig-row-file dig-row-pending' + (selection.has('pending:' + path) === true ? ' dig-row-selected' : ''),
+                  title: path,
+                  onClick: (event) => handleRowClick(event, { path: path }, 'pending'),
+                  onDoubleClick: () => { if (typeof props.onDiff === 'function') props.onDiff({ path: path }, 'pending') },
+                  onContextMenu: (event) => { event.preventDefault(); if (typeof props.onChangeMenu === 'function') props.onChangeMenu(event, { path: path }, 'pending') },
+                },
                   E('span', { className: 'dig-row-icon dig-tone-accent' }, E(Icon, { name: 'inbox', size: 12 })),
                   E('span', { className: 'dig-row-label' }, baseName(path)),
                   /* 目录段与普通变更行同策略去掉：行 title 悬停有全路径。 */
@@ -15196,7 +15349,7 @@ window.__ModuleLoader__.load({
         emitGroup('untracked', fill(t('counts.untracked'), { n: untracked.length }), untracked)
         emitGroup('ignored', fill(t('counts.ignored'), { n: ignored.length }), ignored)
         return out
-      }, [conflicted, staged, unstaged, untracked, ignored, groupBy, foldedDirs, sortKey, t, selection, handleRowClick, props.onUnstageAll, props.onStageAll, props.onFolderMenu, props.ugitFlat, props.cwd, props.base])
+      }, [conflicted, staged, unstaged, untracked, ignored, groupBy, foldedDirs, sortKey, t, selection, handleRowClick, props.onUnstageAll, props.onStageAll, props.onFolderMenu, props.ugitFlat, props.cwd, props.base, props.pendingPaths, props.onPendingRemove, props.onPendingRemoveAll, props.onDiff, props.onChangeMenu])
       const changeOffsets = useMemo(() => {
         const sums = [0]
         for (const item of changeItems) sums.push(sums[sums.length - 1] + item.h)
@@ -17129,9 +17282,12 @@ window.__ModuleLoader__.load({
            files the banner is asking the user to resolve. */
         if (result !== undefined || method === 'pull' || method === 'push') {
           await refresh()
-          /* 提交成功后清空待提交区：这批路径已经进了提交历史，留在列表里
-             只会误导（再点提交会 pathspec 到已提交的路径）。 */
-          if (method === 'commit' && result !== undefined && pendingRepoRef.current !== '') {
+          /* v0.37.9: 待提交区含被 .gitignore 忽略的路径时宿主返回
+             skipped:true（没提交也没推送）。此时用户标记的路径不能凭空消失，
+             不清空 PENDING_KEY；提示由 onCommit 在拿到结果后弹（pushToast
+             声明在本函数之后，不能在依赖数组里引用，见不变量 12）。
+             部分跳过（skipped:false + ignoredPaths）同样只清成功提交的集合。 */
+          if (method === 'commit' && result !== undefined && result !== null && result.skipped !== true && pendingRepoRef.current !== '') {
             setPendingPaths(new Set())
             writePendingMap(Object.assign(readPendingMap(), { [pendingRepoRef.current]: [] }))
           }
@@ -17159,6 +17315,20 @@ window.__ModuleLoader__.load({
           if (pendingRepoRef.current !== '') writePendingMap(Object.assign(readPendingMap(), { [pendingRepoRef.current]: [...next] }))
           return next
         })
+      }, [])
+      /* v0.37.9: 批量移出 / 全部移出。一次 setPendingPaths + 一次 writePendingMap，
+         避免对每个路径都写一次 localStorage（togglePending 的 N 次写）。 */
+      const removePendingMany = useCallback((paths) => {
+        setPendingPaths((previous) => {
+          const next = new Set(previous)
+          for (const path of paths) next.delete(path)
+          if (pendingRepoRef.current !== '') writePendingMap(Object.assign(readPendingMap(), { [pendingRepoRef.current]: [...next] }))
+          return next
+        })
+      }, [])
+      const removePendingAll = useCallback(() => {
+        setPendingPaths(new Set())
+        if (pendingRepoRef.current !== '') writePendingMap(Object.assign(readPendingMap(), { [pendingRepoRef.current]: [] }))
       }, [])
 
       /* Issue #25: one merge verb, four intents. --no-commit alone is refused by
@@ -17707,7 +17877,13 @@ window.__ModuleLoader__.load({
          the only stable handle and the entry lookup must be fresh. */
       const changeSelectionGroups = () => {
         const changes = summary === null ? null : summary.changes
-        const groups = { staged: [], other: [], tracked: [], untracked: [] }
+        /* v0.37.9: 待提交行也进 changeSelection，键为 'pending:<path>'。
+           单独归到 groups.pending，不参与 stage/unstage/discard（那些动作
+           对「待提交」标签没有意义）。 */
+        const groups = { staged: [], other: [], tracked: [], untracked: [], pending: [] }
+        for (const key of changeSelection) {
+          if (key.indexOf('pending:') === 0) { groups.pending.push(key.slice('pending:'.length)); continue }
+        }
         if (changes === null) return groups
         const byKey = new Map()
         for (const entry of changes.staged) byKey.set('staged:' + entry.path, entry)
@@ -17870,13 +18046,16 @@ window.__ModuleLoader__.load({
           for (const entry of changes.staged) alive.add('staged:' + entry.path)
           for (const entry of changes.unstaged) alive.add('unstaged:' + entry.path)
           for (const entry of changes.untracked) alive.add('untracked:' + entry.path)
+          /* v0.37.9: 待提交行的选中在 refresh 后仍要保留（只要该路径还在
+             pendingPaths 集合里）。否则刚多选的待提交行会被当成失效键清掉。 */
+          for (const path of pendingPaths) alive.add('pending:' + path)
           const next = new Set()
           for (const key of previous) {
             if (alive.has(key) === true) next.add(key)
           }
           return next.size === previous.size ? previous : next
         })
-      }, [summary])
+      }, [summary, pendingPaths])
       /* Changes-list keyboard scope: Ctrl/Cmd+C copies paths, Delete opens the
          grouped discard confirm, Ctrl+A selects everything but ignored, Esc
          clears. Typing targets keep their native behaviour. */
@@ -17894,7 +18073,18 @@ window.__ModuleLoader__.load({
         if (event.key === 'Delete' || event.key === 'Backspace') {
           if (changeSelection.size === 0) return
           event.preventDefault()
-          openDiscardManyDialog()
+          /* v0.37.9: 选中集全是待提交行时，Delete 的直觉是「移出待提交」
+             而不是「丢弃文件」。混合选中仍走原来的丢弃确认，避免语义混淆。 */
+          let allPending = true
+          for (const key of changeSelection) {
+            if (key.indexOf('pending:') !== 0) { allPending = false; break }
+          }
+          if (allPending === true) {
+            const paths = [...changeSelection].map((key) => key.slice('pending:'.length))
+            if (typeof removePendingMany === 'function') removePendingMany(paths)
+          } else {
+            openDiscardManyDialog()
+          }
           return
         }
         if (mod === true && (event.key === 'a' || event.key === 'A')) {
@@ -18133,15 +18323,28 @@ window.__ModuleLoader__.load({
            要求右键行必须属于选择集，稍微点偏就退化成单选菜单。 */
         if (changeSelection.size > 1) {
           const groups = changeSelectionGroups()
-          const allPaths = groups.staged.concat(groups.other)
+          const allPaths = groups.staged.concat(groups.other, groups.pending)
           openMenuAt(event, [
             groups.other.length > 0 ? { id: 'stage', icon: 'plus', tone: 'success', label: fill(t('menu.stageN'), { n: groups.other.length }), run: () => { void run('stage', { paths: groups.other }) } } : null,
             groups.staged.length > 0 ? { id: 'unstage', icon: 'minus', tone: 'warn', label: fill(t('menu.unstageN'), { n: groups.staged.length }), run: () => { void run('unstage', { paths: groups.staged }) } } : null,
             groups.other.length > 0 ? { id: 'pendAdd', icon: 'inbox', tone: 'accent', label: fill(t('menu.pendAddN'), { n: groups.other.length }), run: () => { for (const path of groups.other) togglePending(path, true) } } : null,
+            /* v0.37.9: 选中集含待提交行时给「移出 N 个」，一次批量移出。 */
+            groups.pending.length > 0 ? { id: 'pendRemoveMany', icon: 'minus', tone: 'warn', label: fill(t('menu.pendRemoveN'), { n: groups.pending.length }), run: () => removePendingMany(groups.pending) } : null,
             { id: 'discard', icon: 'undo', tone: 'danger', danger: true, label: fill(t('menu.discardN'), { n: groups.tracked.length + groups.untracked.length }), run: () => openDiscardManyDialog() },
             null,
             { id: 'copy', icon: 'tag', tone: 'secondary', label: fill(t('menu.copyPathsN'), { n: allPaths.length }), run: () => copyValues(allPaths) },
           ].filter((entry) => entry !== null))
+          return
+        }
+        /* v0.37.9: 待提交行的右键菜单只做「移出待提交」与复制路径，不给
+           stage/unstage/discard（这些动作对「待提交」标签没有意义）。 */
+        if (group === 'pending') {
+          openMenuAt(event, [
+            { id: 'pendRemove', icon: 'minus', tone: 'warn', label: t('menu.pendRemove'), run: () => togglePending(item.path, false) },
+            { id: 'pendRemoveAll', icon: 'minus', tone: 'warn', label: t('menu.pendRemoveAll'), run: () => removePendingAll() },
+            null,
+            { id: 'copy', icon: 'tag', tone: 'secondary', label: t('action.copyPath'), run: () => { copyText(item.path) } },
+          ])
           return
         }
         const items = [
@@ -18162,7 +18365,7 @@ window.__ModuleLoader__.load({
           { id: 'copy', icon: 'tag', tone: 'secondary', label: t('action.copyPath'), run: () => { copyText(item.path) } },
         ]
         openMenuAt(event, items)
-      }, [showDiff, run, t, openMenuAt, sendFileReferenceToChat, sendToComposer, changeSelection, changeSelectionGroups, openDiscardManyDialog, addToGitignore, copyValues, openFileItem, togglePending, pendingPaths])
+      }, [showDiff, run, t, openMenuAt, sendFileReferenceToChat, sendToComposer, changeSelection, changeSelectionGroups, openDiscardManyDialog, addToGitignore, copyValues, openFileItem, togglePending, pendingPaths, removePendingMany, removePendingAll])
 
       /* The commit-detail file list shares the working-tree row menu, minus the
          staging verbs: a committed file's diff replays against its commit. */
@@ -18955,6 +19158,7 @@ window.__ModuleLoader__.load({
         onMoreMenu: moreMenu,
         request: request, cwd: cwd, sessionId: sessionId, commitSettings: commitSettings, base: base,
         pendingPaths: pendingPaths, onPendingRemove: (path) => togglePending(path, false),
+        onPendingRemoveMany: removePendingMany, onPendingRemoveAll: removePendingAll,
         showIgnored: showIgnored,
         onToggleIgnored: () => setShowIgnored((value) => !value),
         // Commit-and-push carries the confirm flag with it: the button already
@@ -18962,10 +19166,18 @@ window.__ModuleLoader__.load({
         // the click itself rather than by a second dialog.
         /* 待提交区非空时提交按钮只提交这批文件（pathspec commit）；否则维持
            原语义提交整个 index。 */
-        onCommit: (message, amend, push) => {
+        onCommit: async (message, amend, push) => {
           const paths = [...pendingPaths]
-          if (paths.length > 0) return run('commit', { message: message, amend: amend, push: push === true, confirm: push === true, paths: paths, pathspec: true })
-          return run('commit', { message: message, amend: amend, push: push === true, confirm: push === true })
+          const result = paths.length > 0
+            ? await run('commit', { message: message, amend: amend, push: push === true, confirm: push === true, paths: paths, pathspec: true })
+            : await run('commit', { message: message, amend: amend, push: push === true, confirm: push === true })
+          /* v0.37.9: 被 .gitignore 忽略的路径由宿主跳过（skipped:true 表示
+             整批都没提交）。提示「已跳过、仍保留在待提交区」，且不清空标记。
+             pushToast 在 run 之后声明，放在这里用不会违反不变量 12。 */
+          if (result !== undefined && result !== null && Array.isArray(result.ignoredPaths) && result.ignoredPaths.length > 0) {
+            pushToast({ text: fill(t('toast.commitIgnoredSkipped'), { n: result.ignoredPaths.length }), icon: 'eyeOff', tone: 'warn' })
+          }
+          return result
         },
         onStage: (item) => { void run('stage', { paths: [item.path] }) },
         onUnstage: (item) => { void run('unstage', { paths: [item.path] }) },
@@ -20190,7 +20402,8 @@ window.__ModuleLoader__.load({
       '.dig-mini:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
       '.dig-commit-box{flex:none;padding:6px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--dsw-alias-border-l2)}',
       '.dig-commit-box-compact{flex-direction:row;align-items:center;gap:6px;padding:4px 6px;flex-wrap:wrap}',
-      '.dig-textarea{width:100%;box-sizing:border-box;min-height:50px;resize:vertical;padding:5px 6px;border-radius:var(--dsw-radius-sm,8px);border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;outline:none}',
+      /* v0.37.9: 默认高度翻倍(50→100)且可用原生把手拉高/拉低(有上下限)。 */
+      '.dig-textarea{width:100%;box-sizing:border-box;height:100px;min-height:50px;max-height:40vh;resize:vertical;padding:5px 6px;border-radius:var(--dsw-radius-sm,8px);border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;outline:none}',
       '.dig-textarea::placeholder{color:var(--dsw-alias-label-tertiary)}',
       '.dig-textarea:focus{border-color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary))}',
       '.dig-commit-actions{display:flex;align-items:center;gap:8px}',

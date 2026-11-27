@@ -2849,7 +2849,13 @@ test('history progressive columns + outside-file sink + pending area (v0.37.3)',
   assert.match(client, /id: 'pendAdd', icon: 'inbox', tone: 'accent', label: fill\(t\('menu\.pendAddN'\)/, 'multi-select adds N files at once')
   assert.match(client, /className: 'dig-group-head dig-group-head-pending'/, 'the pending section renders at the bottom of the changes list')
   assert.match(client, /paths: paths, pathspec: true/, 'the commit button commits exactly the pending paths')
-  assert.match(read('src/host/write.js'), /if \(payload\.pathspec === true && paths\.length > 0\) args\.push\('--', \.\.\.paths\)/, 'the host commit supports a pathspec without disturbing the rest of the index')
+  /* v0.37.9: pathspec 仍只提交本批路径，但整批 add 失败时改用「实际暂存
+     集合」的交集（submitPaths），避免把 .gitignore 忽略的裸目录带进 pathspec
+     让整条 commit 失败。既有的「不动 index 其它条目」语义由交集保证。 */
+  assert.match(read('src/host/write.js'), /if \(payload\.pathspec === true && submitPaths\.length > 0\) args\.push\('--', \.\.\.submitPaths\)/, 'the host commit still uses a pathspec (now the staged∩paths intersection)')
+  assert.match(read('src/host/write.js'), /stagedPathsOf\(root\)/, 'a failed bulk add is resolved against the actual staged set')
+  assert.match(read('src/host/write.js'), /submitPaths = paths\.filter\(\(entry\) => staged\.has\(entry\)\)/, 'only staged paths survive into the commit pathspec')
+  assert.match(read('src/host/write.js'), /skipped: true, ignoredPaths: ignoredPaths, pushed: false/, 'an all-ignored batch is reported, not committed or pushed')
   assert.equal((client.match(/'changes\.pending': '/g) || []).length, 21, 'all 21 dictionaries define changes.pending')
   assert.equal((client.match(/'menu\.pendAdd': '/g) || []).length, 21, 'all 21 dictionaries define menu.pendAdd')
 })
@@ -2890,7 +2896,10 @@ test('multi-select is actually usable in the flat changes list (v0.37.6)', () =>
   // → Shift 范围 indexOf 恒 -1、多选退化成单选。统一 key 后修复。
   assert.match(client, /out\.push\(\{ kind: 'row', key: entry\.key \+ ':' \+ entry\.item\.path/, 'flat rows use the same group:path key as the click handler')
   assert.doesNotMatch(client, /key: 'flat:' \+/, 'no divergent flat-row key remains')
-  assert.match(client, /entry\.key\.indexOf\('pending:'\) !== 0/, 'pending rows are excluded from the shift-range key list')
+  /* v0.37.9: 待提交行现在也用 'pending:<path>' 参与 Shift 范围（与
+     group:path 同一格式），旧「排除 pending」断言已随需求作废。 */
+  assert.doesNotMatch(client, /entry\.key\.indexOf\('pending:'\) !== 0/, 'pending rows are no longer excluded from the shift-range key list')
+  assert.match(client, /if \(key\.indexOf\('pending:'\) === 0\) \{ groups\.pending\.push/, 'pending selection resolves into its own group (no stage/discard)')
   // 选中多个后右键任意行都作用于整组。
   assert.match(client, /if \(changeSelection\.size > 1\) \{/, 'a multi-selection right-click acts on the whole set')
 })
@@ -2921,4 +2930,122 @@ test('topbar shows only Changes/History tabs and the repo label has no branch (v
   // 2) 仓库名只显示仓库本身，分支信息去掉（后面有独立分支选择器）。
   assert.doesNotMatch(client, /current\.name \+ \(current\.branch/, 'the repo label no longer concatenates the branch')
   assert.match(client, /current === null \? t\('repo\.pick'\) : current\.name\)/, 'the repo label is the bare repo name')
+})
+
+test('v0.37.9: 忽略路径提交 / AI 语言与防截断 / 待提交多选 / 输入框高度', () => {
+  const write = read('src/host/write.js')
+  const cm = read('src/host/commit-message.js')
+
+  /* D1 — 整批 add 失败是「部分成功」，用 diff --cached 求 paths∩staged。
+     截图场景：几十个 .json 路径 + 一个被 .gitignore 忽略的裸目录，
+     只有裸目录被 git 报 ignored；正常路径其实已全部暂存。 */
+  assert.match(write, /runGit\(root, \['add', '-A', '--', \.\.\.paths\]\)/, 'commit still tries one bulk add first')
+  assert.match(write, /runGit\(root, \['diff', '--cached', '-z', '--name-only'\]\)/, 'a failed bulk add is resolved against the actual staged set')
+  /* 截图量级(45 路径)回归：只看 diff --cached 会把「已跟踪但无变更」的几十个
+     .json 误报成 ignored；必须叠加 ls-files 精确区分裸目录/忽略新文件。 */
+  assert.match(write, /runGit\(root, \['ls-files', '-z'\]\)/, 'the committed-path set also includes unchanged tracked files')
+  assert.match(write, /for \(const entry of tracked\.stdout\.split\('\\0'\)\)/, 'ls-files entries join the set')
+  assert.match(write, /submitPaths = paths\.filter\(\(entry\) => staged\.has\(entry\)\)/, 'only staged paths survive into the commit pathspec')
+  assert.match(write, /skipped: true, ignoredPaths: ignoredPaths, pushed: false/, 'an all-ignored batch is reported, not committed or pushed')
+  assert.doesNotMatch(write, /check-ignore|--error-unmatch|'add','-u'/, 'no check-ignore / ls-files / -u rescue paths')
+  assert.match(write, /if \(payload\.pathspec === true && submitPaths\.length > 0\) args\.push\('--', \.\.\.submitPaths\)/, 'pathspec commit uses the intersection')
+  assert.match(client, /result\.skipped !== true/, 'a skipped commit keeps the pending markers')
+  assert.match(client, /toast\.commitIgnoredSkipped/, 'skipped paths are surfaced to the user')
+
+  /* D2 — 界面语言进 system 指令，中文界面要求中文。 */
+  assert.match(client, /locale: activeLocaleOf\(props\.ctx\)/, 'the client sends the live UI locale')
+  assert.match(cm, /function commitLanguageOf\(locale\)/, 'the host maps a locale through a whitelist')
+  assert.match(cm, /return '简体中文'/, 'zh maps to Simplified Chinese')
+  assert.match(cm, /Write the commit message in ' \+ language/, 'the language requirement lands in the system prompt')
+  assert.match(cm, /commitMessagesOf\(input, prompt, payload\.locale\)/, 'the route passes the locale through')
+  assert.doesNotMatch(cm, /system: \[\s*'You write git commit messages\.'\s*\]\.join/, 'the user prompt cannot replace the built-in rules')
+
+  /* D3 — 输入预算放宽 + 上游 truncated 透传 + 省略摘要；输出 block-end / partial。 */
+  assert.match(cm, /const COMMIT_TOTAL_BYTES = 64 \* 1024/, 'total input budget is raised to 64KB')
+  assert.match(cm, /const COMMIT_FILE_BYTES = 8192/, 'per-file budget is raised to 8KB')
+  assert.match(cm, /const COMMIT_MAX_FILES = 60/, 'file cap is raised to 60')
+  assert.match(cm, /function commitInputOf\(stagedPatch, unstagedPatch, upstreamTruncated\)/, 'commitInputOf takes the upstream truncation flag')
+  assert.match(cm, /stagedResult\.truncated === true \|\| unstagedResult\.truncated === true/, 'diff() truncation is forwarded')
+  assert.match(cm, /omittedFiles\.push\(name\)/, 'over-budget files are reported, not silently dropped')
+  /* v0.37.9 验收收口：超预算文件留极短标记 + 末条汇总，且 files 条目仍守
+     COMMIT_MAX_FILES 上限、bytes 仍守 COMMIT_TOTAL_BYTES（真机证据脚本发现
+     「预算占满即整文件消失」的语义缺陷后修正）。 */
+  assert.match(cm, /if \(extraOmitted\.length > 0 && files\.length > 0\)/, 'extra omitted files are folded into one summary marker')
+  assert.match(cm, /files\.length < COMMIT_MAX_FILES/, 'full/omitted entries stay within the file cap')
+  const cmBlock = cm.slice(cm.indexOf('const COMMIT_MAX_PROMPT_CHARS'), cm.indexOf('export function setCommitServices'))
+  const budgetApi = new Function(cmBlock + '\nreturn { commitInputOf, COMMIT_TOTAL_BYTES, COMMIT_MAX_FILES }')()
+  const huge = Array.from({ length: 70 }, (_, i) => 'diff --git a/f' + i + '.txt b/f' + i + '.txt\n+' + 'y'.repeat(7000)).join('\n')
+  const over = budgetApi.commitInputOf(huge, '', false)
+  assert.ok(over.files.length <= budgetApi.COMMIT_MAX_FILES, 'the entry cap holds even with 70 changed files')
+  assert.ok(over.bytes <= budgetApi.COMMIT_TOTAL_BYTES, 'the byte budget holds')
+  assert.equal(over.truncated, true, 'over-budget input is honestly reported as truncated')
+  assert.equal(over.omittedFiles.length, 61, 'every omitted file is named')
+  assert.ok(over.omittedFiles.every((name) => over.files.some((file) => file.path === name) || over.files[over.files.length - 1].body.includes(name)), 'no changed file vanishes silently')
+  assert.match(cm, /chunk\.type === 'block-end'/, 'the stream collector accepts a complete TextBlock')
+  assert.match(cm, /const partial = finish\.kind === 'max-tokens' && collected\.text\.trim\(\) !== ''/, 'a max-tokens half-message is marked partial')
+  assert.match(cm, /cleanupCommitMessage\(collected\.text, partial\)/, 'partial text is closed off')
+  assert.match(cm, /partial: partial,/, 'partial is reported in the response')
+  assert.match(client, /data\.partial === true/, 'the client shows the partial state')
+  assert.match(client, /changes\.aiNoticeOmitted|changes\.aiNoticeUpstream/, 'the client reports omitted / upstream-truncated input')
+  assert.doesNotMatch(cm, /maxTokens: [0-9]/, 'no hardcoded output cap returns (issue #7)')
+
+  /* D4 — 待提交行复用 changeSelection，右键/键盘/栏右全部移出。 */
+  assert.match(client, /className: 'dig-row dig-row-file dig-row-pending' \+ \(selection\.has\('pending:' \+ path\)/, 'pending rows render the shared selection highlight')
+  assert.match(client, /onClick: \(event\) => handleRowClick\(event, \{ path: path \}, 'pending'\)/, 'pending rows go through handleRowClick')
+  assert.doesNotMatch(client, /entry\.key\.indexOf\('pending:'\) !== 0/, 'pending rows join the shift range')
+  assert.match(client, /for \(const path of pendingPaths\) alive\.add\('pending:' \+ path\)/, 'a refresh keeps pending rows selected')
+  assert.match(client, /if \(key\.indexOf\('pending:'\) === 0\) \{ groups\.pending\.push/, 'pending selection resolves into its own group')
+  assert.match(client, /groups\.pending\.length > 0 \? \{ id: 'pendRemoveMany'/, 'multi-select right-click offers remove-N')
+  assert.match(client, /label: t\('menu\.pendRemoveAll'\), run: \(\) => removePendingAll\(\)/, 'pending right-click offers remove-all')
+  assert.match(client, /className: 'dig-link', title: t\('menu\.pendRemoveAll'\)/, 'the pending group head has a right-aligned remove-all link')
+  assert.match(client, /if \(allPending === true\)/, 'Delete on a pure pending selection removes markers, not files')
+  assert.match(client, /onPendingRemoveMany: removePendingMany, onPendingRemoveAll: removePendingAll/, 'the panel wires the two new handlers')
+  assert.match(client, /props\.pendingPaths, props\.onPendingRemove, props\.onPendingRemoveAll, props\.onDiff, props\.onChangeMenu\]/, 'changeItems memo tracks the new props (invariant 12)')
+
+  /* D5 — 提交框默认高度翻倍且可拉伸。 */
+  assert.match(client, /height:100px;min-height:50px;max-height:40vh;resize:vertical/, 'textarea is 100px by default with a drag range')
+
+  /* D6 — 21 门词典键集一致（既有键集测试逐门比对，这里钉住 6 个新键）。 */
+  for (const key of ['toast.commitIgnoredSkipped', 'menu.pendRemoveN', 'menu.pendRemoveAll', 'changes.aiPartial', 'changes.aiNoticeOmitted', 'changes.aiNoticeUpstream']) {
+    assert.equal((client.match(new RegExp("'" + key.replace(/\./g, '\\.') + "':", 'g')) || []).length, 21, 'all 21 dictionaries define ' + key)
+  }
+})
+
+test('v0.37.9 边界与跨边界契约：错误分类 / locale 回退 / 持久化 / 响应字段', () => {
+  const cm = read('src/host/commit-message.js')
+  const write = read('src/host/write.js')
+  const http = read('src/host/http.js')
+
+  /* 1) 错误分类：stagedPathsOf 失败抛 git-failed(409) 且带 detail，不是无信息失败；
+        commit-message 的 error/aborted/empty-output 等失败码一字未删。 */
+  assert.match(write, /throw new PanelError\('git-failed', 'git diff --cached failed: ' \+/, 'a failed staged-set read is a classified git error, not silence')
+  for (const code of ['llm-error', 'llm-aborted', 'llm-no-finish', 'llm-unfinished', 'empty-output', 'busy', 'no-host-service']) {
+    assert.ok(cm.includes("'" + code + "'"), 'the failure code ' + code + ' is still produced')
+  }
+  assert.match(http, /sendJson\(res, error\.status, \{ ok: false, error: \{ code: error\.code/, 'the HTTP layer maps PanelError.code to the wire error code')
+  assert.match(client, /failure\.code = typeof error\.code === 'string' \? error\.code : 'unknown'/, 'the client request() preserves the wire code for aiRun')
+
+  /* 2) 工具/协议契约：commit 与 commit-message 都在方法表；响应新增字段是追加，
+        既有 message/output 字段不变（向后兼容）。 */
+  assert.match(http, /'commit-message': commitMessage/, 'commit-message is registered')
+  assert.match(http, /\bcommit,/, 'commit is registered')
+  assert.match(cm, /message: message,/, 'the legacy message field is unchanged')
+  assert.match(write, /const result = \{ output: out\.trim\(\) \}/, 'the legacy output field is unchanged')
+
+  /* 3) 持久化契约：PENDING_KEY schema 不变，旧数据可读（坏 JSON / null / 数组
+        都降级为 {}，非字符串元素在装载时过滤）。 */
+  assert.match(client, /const PENDING_KEY = 'dsh-ide-git\.pending\.v1'/, 'the persisted key/version is unchanged')
+  assert.match(client, /parsed !== null && typeof parsed === 'object' && !Array\.isArray\(parsed\) \? parsed : \{\}/, 'legacy/corrupt documents degrade to an empty map')
+  assert.match(client, /stored\.filter\(\(path\) => typeof path === 'string'\)/, 'non-string entries are filtered on load')
+
+  /* 4) locale 可选性：缺省 / null / 非字符串 / 未列出 tag 都回退 English（白名单防注入）。 */
+  assert.match(cm, /const raw = typeof locale === 'string' \? locale\.trim\(\)\.toLowerCase\(\)\.replace\(\/_\/g, '-'\) : ''/, 'a non-string or missing locale is treated as empty')
+  assert.match(cm, /return 'English'/, 'an unmapped locale falls back to English')
+
+  /* 5) null 与缺省不混淆：finishKind 用 null 明确「无 finish」，input 字段恒返回；
+        客户端用 === true / Array.isArray 严格判定，不把 undefined 当 false 的反面。 */
+  assert.match(cm, /finishKind: finish === null \|\| finish === undefined \? null : String\(finish\.kind\)/, 'finishKind distinguishes null from a value')
+  assert.match(client, /data\.partial === true/, 'partial is checked strictly, not truthily')
+  assert.match(client, /Array\.isArray\(input\.omittedFiles\)/, 'omittedFiles is checked with Array.isArray')
+  assert.match(client, /input\.upstreamTruncated === true/, 'upstreamTruncated is checked strictly')
 })

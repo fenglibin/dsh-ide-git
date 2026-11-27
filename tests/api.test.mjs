@@ -1198,9 +1198,14 @@ test('commit-message: a failure names the route it used and where it came from (
 test('commit-message: aborted, truncated and finish-less streams all fail loud', async () => {
   const aborted = await withServices(fakeLlm([{ type: 'finish', reason: { kind: 'aborted', failure: { code: 'ABORTED', message: 'user cancelled' } } }]), fakeSessions({ provider: 'p', model: 'm' }), (call) => call('commit-message', { cwd: repo, sessionId: 'sess-1' }))
   assert.equal(aborted.body.error.code, 'llm-aborted')
+  /* v0.37.9: max-tokens + 已有文本 = 输出被长度上限截成半截。不再当硬错误
+     （502），而是返回 partial:true + 半截文本，由客户端明确标注「半截结果」
+     （用户可重写）。「无文本且 reasoning 烧光预算」仍走 llm-unfinished。 */
   const cut = await withServices(fakeLlm([{ type: 'text-delta', index: 0, text: 'feat: half' }, { type: 'finish', reason: { kind: 'max-tokens' } }]), fakeSessions({ provider: 'p', model: 'm' }), (call) => call('commit-message', { cwd: repo, sessionId: 'sess-1' }))
-  assert.equal(cut.status, 502)
-  assert.equal(cut.body.error.code, 'llm-unfinished')
+  assert.equal(cut.status, 200)
+  assert.equal(cut.body.data.partial, true)
+  assert.equal(cut.body.data.finishKind, 'max-tokens')
+  assert.match(cut.body.data.message, /feat: half/)
   /* Issue #7's exact signature: the budget (reasoning included) ran out
      mid-thought, so there is no message text at all — and the failure says
      what happened instead of a bare finish kind. */
@@ -1641,4 +1646,126 @@ test('commit with pathspec commits exactly the given paths (待提交区, v0.37.
   rmSync(join(repo, 'other-a.txt'), { force: true })
   rmSync(join(repo, 'pending-b.txt'), { force: true })
   execFileSync('git', ['-C', repo, 'reset', '-q', '--hard'])
+})
+
+test('v0.37.9: an ignored directory in the pending pathspec no longer fails the whole commit', async () => {
+  /* 截图精确场景：.gitignore 忽略 services/ 目录，但该目录下有已跟踪的
+     .json 子文件；待提交区同时含几十个子文件路径、一个正常新增文件，
+     以及那个裸目录。git add -A -- <全部> 会报 ignored 并整条 exit 1，
+     但正常路径其实已经全部暂存进 index（「部分成功」）。 */
+  const root = mkdtempSync(join(tmpdir(), 'dsh-ide-git-ignored-'))
+  const at = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' })
+  try {
+    at(root, 'init', '-q', '-b', 'main')
+    at(root, 'config', 'user.name', 'Check')
+    at(root, 'config', 'user.email', 'check@example.com')
+    at(root, 'config', 'core.autocrlf', 'false')
+    mkdirSync(join(root, 'scripts/yapi_scene_export/portal/services'), { recursive: true })
+    writeFileSync(join(root, 'scripts/yapi_scene_export/portal/services/course-list.json'), '{}\n')
+    writeFileSync(join(root, 'README.md'), 'base\n')
+    writeFileSync(join(root, '.gitignore'), 'scripts/yapi_scene_export/portal/services/\n')
+    at(root, 'add', '-f', 'scripts/yapi_scene_export/portal/services/course-list.json', 'README.md', '.gitignore')
+    at(root, 'commit', '-q', '-m', 'init')
+
+    // 修改已跟踪子文件 + 新增一个正常文件 + 新增一个被忽略目录里的文件
+    writeFileSync(join(root, 'scripts/yapi_scene_export/portal/services/course-list.json'), '{"changed":true}\n')
+    writeFileSync(join(root, 'README.md'), 'base\nmore\n')
+    writeFileSync(join(root, 'scripts/yapi_scene_export/test_phase2.py'), 'print(1)\n')
+    writeFileSync(join(root, 'scripts/yapi_scene_export/portal/services/extra.json'), '{}\n')
+
+    const ignoredDir = 'scripts/yapi_scene_export/portal/services'
+    const paths = [
+      ignoredDir,
+      'scripts/yapi_scene_export/portal/services/course-list.json',
+      'scripts/yapi_scene_export/test_phase2.py',
+      'README.md',
+    ]
+
+    // 1) 整批 add -A 直接调用会失败（复现用户截图）
+    const bulk = (() => {
+      try { at(root, 'add', '-A', '--', ...paths); return 0 } catch (error) { return error.status }
+    })()
+    assert.equal(bulk, 1, 'git add -A with the ignored bare directory fails as a whole')
+
+    // 2) 走宿主 commit 路由（pathspec:true）：不再整条失败
+    const committed = await call('commit', { cwd: root, message: 'v0.37.9 ignored-dir fix', pathspec: true, paths })
+    assert.equal(committed.status, 200, 'the host commit does not surface a git-failed error')
+    assert.equal(committed.body.error, undefined, 'no error envelope is returned')
+    const data = committed.body.data
+    assert.ok(data !== null && typeof data === 'object', 'a result object comes back')
+    assert.match(data.output, /v0\.37\.9 ignored-dir fix/, 'a real commit landed')
+    assert.deepEqual(data.ignoredPaths, [ignoredDir], 'only the ignored bare directory is reported')
+    assert.notEqual(data.skipped, true, 'a partial batch still commits the staged paths')
+
+    const shown = at(root, 'show', '--pretty=', '--name-only', 'HEAD').trim().split('\n').filter(Boolean).sort()
+    assert.deepEqual(shown, [
+      'README.md',
+      'scripts/yapi_scene_export/portal/services/course-list.json',
+      'scripts/yapi_scene_export/test_phase2.py',
+    ].sort(), 'tracked modification + normal new file are committed; the ignored dir/new ignored file are not')
+    assert.equal(existsSync(join(root, 'scripts/yapi_scene_export/portal/services/extra.json')), true, 'the ignored file is left untouched on disk')
+
+    // 3) 整批都被忽略时：skipped:true、不提交、不推送
+    const none = await call('commit', { cwd: root, message: 'all ignored', pathspec: true, paths: [ignoredDir, 'scripts/yapi_scene_export/portal/services/extra.json'], push: true, confirm: true })
+    assert.equal(none.status, 200)
+    assert.equal(none.body.data.skipped, true, 'an all-ignored batch is reported as skipped')
+    assert.equal(none.body.data.pushed, false, 'nothing is pushed when nothing was committed')
+    assert.deepEqual(none.body.data.ignoredPaths.sort(), [ignoredDir, 'scripts/yapi_scene_export/portal/services/extra.json'].sort())
+    assert.equal(at(root, 'rev-parse', 'HEAD').trim(), at(root, 'rev-parse', 'HEAD').trim())
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('v0.37.9: a full screenshot-scale pathspec reports exactly one ignored bare directory', async () => {
+  /* 用户完整截图：45 个 pathspec 里混有裸目录 services/、该目录下几十个
+     已跟踪 .json（多数无变更）、portal/ 下的 .json/.html/.md、docs/、.py、
+     .sh。git 只点名裸目录一个。回归点：只看 diff --cached 会把「已跟踪但
+     本次无变更」的几十个文件误报成 ignored，必须用 ls-files ∪ diff --cached
+     求可提交集合，ignoredPaths 才能精确等于那一个裸目录。 */
+  const root = mkdtempSync(join(tmpdir(), 'dsh-ide-git-screenshot-'))
+  const at = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' })
+  const E = 'scripts/yapi_scene_export/', DIR = E + 'portal/services'
+  const FILES = [
+    '.gitignore', E + 'README.md', E + 'capability-enrich-cache.json', E + 'enrich-cache.json', E + 'mcpi/interface.json',
+    E + 'portal/call-graph.json', E + 'portal/generation-state.json', E + 'portal/index.html', E + 'portal/scan-report.json',
+    E + 'portal/scan-report.md', E + 'portal/scenarios/exam-submit-and-score.json', E + 'portal/scenarios/index.json',
+    E + 'portal/scenarios/learning-progress-report.json', E + 'portal/scenarios/netcourse-caption-load.json',
+    E + 'portal/scenarios/netcourse-detail-play.json', DIR + '/Q-Mentor.json', DIR + '/content-center.json', DIR + '/content-delivery.json',
+    DIR + '/course-list.json', DIR + '/exam-evaluation.json', DIR + '/grow-matrix-service-search.json', DIR + '/know-service.json',
+    DIR + '/knowledge-center-service.json', DIR + '/learn-credit-service.json', DIR + '/live-learn-host.json',
+    DIR + '/portal-qlearning-adapter.json', DIR + '/pre-job-service.json', DIR + '/q-mentor-service.json',
+    DIR + '/target-audience-service.json', DIR + '/train-behavior-service.json', DIR + '/training-common-service.json',
+    DIR + '/training-management-pc-service.json', DIR + '/training-portal-area.json', DIR + '/training-portal-content.json',
+    DIR + '/training-portal-file.json', E + 'portal/yapi-scene-apis.json', E + 'source-quality.json',
+    E + 'docs/fix-source-anchor-tail-match.md', E + 'source_anchor.py', E + 'test_phase2.py', E + 'source_coverage.py',
+    E + 'source-coverage-report.md', E + 'update_code_regenerate_api_doc_upload_knowledge.sh',
+  ]
+  const PATHS = ['.gitignore', ...FILES.slice(1, 15), DIR, ...FILES.slice(15)]
+  try {
+    at(root, 'init', '-q', '-b', 'master')
+    at(root, 'config', 'user.name', 'Check'); at(root, 'config', 'user.email', 'check@example.com')
+    at(root, 'config', 'core.autocrlf', 'false')
+    for (const p of FILES) {
+      mkdirSync(join(root, p.split('/').slice(0, -1).join('/')), { recursive: true })
+      writeFileSync(join(root, p), '{}\n')
+    }
+    writeFileSync(join(root, '.gitignore'), DIR + '/\n')
+    for (const p of FILES) { if (p !== '.gitignore') { try { at(root, 'add', '-f', '--', p) } catch (error) { void error } } }
+    at(root, 'add', '-f', '.gitignore'); at(root, 'commit', '-q', '-m', 'baseline')
+    // 只改动前 7 个文件；其余几十个已跟踪文件本次无变更。
+    for (const p of FILES.slice(1, 8)) writeFileSync(join(root, p), '{"changed":true}\n')
+    writeFileSync(join(root, DIR + '/brand-new.json'), '{}\n')
+
+    const result = await call('commit', { cwd: root, message: 'fix: screenshot scale', pathspec: true, paths: PATHS })
+    assert.equal(result.status, 200, 'the host commit does not surface the ignored-directory error')
+    const data = result.body.data
+    assert.notEqual(data.skipped, true, 'a partially staged batch still commits')
+    assert.deepEqual(data.ignoredPaths, [DIR], 'only the bare ignored directory is reported — unchanged tracked files must NOT be misreported')
+    const shown = at(root, 'show', '--pretty=', '--name-only', 'HEAD').trim().split('\n').filter(Boolean).sort()
+    assert.ok(shown.length >= 7, 'the changed files land in the commit')
+    assert.equal(shown.includes(DIR), false, 'the bare directory is never committed as a pathspec')
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
 })
